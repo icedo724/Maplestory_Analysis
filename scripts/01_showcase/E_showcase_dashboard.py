@@ -34,7 +34,7 @@ def load_agg():
 
 def main():
     if not os.path.exists(AGG_DIR):
-        st.error(f"집계 데이터 폴더가 없습니다: `{AGG_DIR}`\nE_export_agg.py를 먼저 실행해 주세요.")
+        st.error(f"집계 데이터 폴더가 없습니다: `{AGG_DIR}`\nC_export_agg.py를 먼저 실행해 주세요.")
         return
 
     daily, summary, sun_ev, sun_box, anova, weekday, tukey, event_impact = load_agg()
@@ -298,7 +298,7 @@ def main():
         )
 
         if event_impact.empty:
-            st.info("이벤트 영향 분석 데이터가 없습니다. E_export_agg.py를 실행해 주세요.")
+            st.info("이벤트 영향 분석 데이터가 없습니다. C_export_agg.py를 실행해 주세요.")
         else:
             events_list = (event_impact[['event_name', 'event_type', 'event_start', 'event_end']]
                            .drop_duplicates())
