@@ -2,7 +2,7 @@
 
 넥슨 오픈API로 수집한 실제 유저 데이터를 바탕으로, 2025년 12월 메이플스토리 쇼케이스(대규모 업데이트 예고 이벤트)가 일일 경험치 획득량에 미친 영향을 통계적으로 검증한 프로젝트입니다.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://maplestory-exp-analysis.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://mapleexp.streamlit.app/)
 
 ---
 
