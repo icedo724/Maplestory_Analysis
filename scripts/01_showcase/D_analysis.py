@@ -156,7 +156,7 @@ day_avg.name = '평균 경험치'
 print(day_avg.to_string())
 print(f"\n  → 최고 요일: {day_avg.idxmax()}  ({day_avg.max():,.0f})")
 print(f"  → 최저 요일: {day_avg.idxmin()}  ({day_avg.min():,.0f})")
-print(f"  → 목(메요일)/일(선데이) 비율: "
+print(f"  → 목(메요일)/일(썬데이) 비율: "
       f"목={day_avg['목']/day_avg.mean()*100:.1f}%  일={day_avg['일']/day_avg.mean()*100:.1f}% (전체 평균 대비)")
 
 # 2-2. 구간별 요일 패턴
@@ -183,11 +183,11 @@ print(f"\n  → 쇼케이스 주차: {showcase_week}주차")
 
 
 # ══════════════════════════════════════════════════════════════════════
-# [3] 선데이 메이플 이벤트 분석
+# [3] 썬데이 메이플 이벤트 분석
 # ══════════════════════════════════════════════════════════════════════
-section("[3] 선데이 메이플 이벤트 분석 - F-검정 (ANOVA)")
+section("[3] 썬데이 메이플 이벤트 분석 - F-검정 (ANOVA)")
 
-# 선데이 로그 로드
+# 썬데이 로그 로드
 sunday_log_df = pd.DataFrame(columns=['Date', 'Sunday_Type'])
 if os.path.exists(SUNDAY_LOG_PATH):
     rows = []
@@ -208,12 +208,12 @@ def classify_sunday_event(event_str):
         return '사냥'
     return '사냥 외'
 
-# 누락 선데이 체크
+# 누락 썬데이 체크
 all_sundays = sorted(melted[melted['DayOfWeek'] == 6]['Date'].dt.normalize().unique())
 logged_dates = set(sunday_log_df['Date'].dt.normalize()) if not sunday_log_df.empty else set()
 missing = [d for d in all_sundays if d not in logged_dates]
 if missing:
-    print(f"[주의] sundaylog 미등록 선데이 {len(missing)}개: "
+    print(f"[주의] sundaylog 미등록 썬데이 {len(missing)}개: "
           + ", ".join(pd.Timestamp(d).strftime('%Y-%m-%d') for d in missing))
 
 # 일요일 데이터 + 이벤트 병합
@@ -227,8 +227,8 @@ df_sun['Pre_Avg'] = df_sun['name'].map(pre_avg_map)
 valid = df_sun['Pre_Avg'].notna() & (df_sun['Pre_Avg'] > 0) & df_sun['Exp'].notna()
 df_sun['Exp_Ratio'] = np.where(valid, (df_sun['Exp'] / df_sun['Pre_Avg']) * 100, np.nan)
 
-# 3-1. 선데이 분류 현황
-subsection("3-1. 선데이 분류 현황")
+# 3-1. 썬데이 분류 현황
+subsection("3-1. 썬데이 분류 현황")
 log_display = (
     df_sun[['Date', 'Sunday_Type', 'Event_Category']]
     .drop_duplicates()

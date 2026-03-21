@@ -53,8 +53,8 @@ def main():
 
     tab1, tab2, tab3, tab4 = st.tabs([
         "쇼케이스 영향 (Pre vs Post)",
-        "주간 패턴 (요일/선데이)",
-        "선데이 이벤트 심층 분석",
+        "주간 패턴 (요일/썬데이)",
+        "썬데이 이벤트 심층 분석",
         "이벤트 기간 영향 분석",
     ])
 
@@ -152,7 +152,7 @@ def main():
         fig_week.add_annotation(x=1, y=y_m * 0.1, text="목(메요일)",
                                 showarrow=False, font=dict(color="orange"), textangle=-90)
         fig_week.add_vline(x=4, line_width=1.5, line_dash="dot", line_color="green")
-        fig_week.add_annotation(x=4, y=y_m * 0.1, text="일(선데이)",
+        fig_week.add_annotation(x=4, y=y_m * 0.1, text="일(썬데이)",
                                 showarrow=False, font=dict(color="green"), textangle=-90)
         st.plotly_chart(fig_week, use_container_width=True)
 
@@ -177,12 +177,12 @@ def main():
                                annotation_text="쇼케이스", annotation_position="right")
         st.plotly_chart(fig_heat, use_container_width=True)
 
-    # ── TAB 3: 선데이 이벤트 심층 분석 ──────────────────────────────────
+    # ── TAB 3: 썬데이 이벤트 심층 분석 ──────────────────────────────────
     with tab3:
         st.markdown(
-            "선데이 메이플 이벤트 종류(경타포스 / 사냥 / 사냥 외)에 따라 "
+            "썬데이 메이플 이벤트 종류(경타포스 / 사냥 / 사냥 외)에 따라 "
             "유저들의 **사냥 동기 변화율**이 달라지는지 검증합니다.  \n"
-            "절댓값 경험치가 아닌 **유저별 평상시(Pre_Avg) 대비 해당 선데이의 변화율**을 "
+            "절댓값 경험치가 아닌 **유저별 평상시(Pre_Avg) 대비 해당 썬데이의 변화율**을 "
             "기준으로 분석하여 레벨 구간 간 기본 경험치 차이를 제거합니다."
         )
 
@@ -191,7 +191,7 @@ def main():
         col_sub1, col_sub2 = st.columns([1, 2.5])
 
         with col_sub1:
-            st.info("선데이 분류 현황")
+            st.info("썬데이 분류 현황")
             log_display = (sun_ev[['Date', 'Sunday_Type', 'Event_Category']]
                            .drop_duplicates()
                            .sort_values('Date'))
@@ -269,7 +269,7 @@ def main():
                 st.success(
                     f"**이벤트 유형 간 사냥량 변화율에 유의미한 차이 존재 "
                     f"(F={f_stat:.2f}, P={p_val:.4e})**\n\n"
-                    f"선데이 이벤트의 종류가 유저 사냥 동기에 실질적으로 다른 영향을 미쳤습니다.\n\n"
+                    f"썬데이 이벤트의 종류가 유저 사냥 동기에 실질적으로 다른 영향을 미쳤습니다.\n\n"
                     f"*(평균 변화율: {means_text})*"
                 )
             else:
