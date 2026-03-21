@@ -43,9 +43,9 @@ RCT가 불가능한 실제 서비스 환경에서 **자연 실험(Natural Experi
 scripts/01_showcase/
 ├── A_get_showcase_impact.py   # 넥슨 오픈API 데이터 수집
 ├── B_preprocessing.py         # 레벨업 보정 및 유저 필터링
-├── C_showcase_dashboard.py    # Streamlit 대시보드
+├── C_export_agg.py            # 집계 파일 생성 (152MB → ~50KB)
 ├── D_analysis.py              # 통계 분석 결과 출력
-└── E_export_agg.py            # 집계 파일 생성 (152MB → ~50KB)
+└── E_showcase_dashboard.py    # Streamlit 대시보드
 
 data/showcase/aggregated/
 ├── agg_daily_segment.csv      # 날짜 × 구간별 일평균 경험치
@@ -72,10 +72,10 @@ echo "YOUR_NEXON_API_KEY" > config/api.txt
 # 3. 파이프라인 순서대로 실행
 python scripts/01_showcase/A_get_showcase_impact.py
 python scripts/01_showcase/B_preprocessing.py
-python scripts/01_showcase/E_export_agg.py
+python scripts/01_showcase/C_export_agg.py
 
 # 4. 대시보드 실행
-streamlit run scripts/01_showcase/C_showcase_dashboard.py
+streamlit run scripts/01_showcase/E_showcase_dashboard.py
 
 # 5. 분석 결과 출력
 python scripts/01_showcase/D_analysis.py
