@@ -89,8 +89,8 @@ agg2.to_csv(os.path.join(AGG_DIR, 'agg_segment_summary.csv'), index=False, encod
 print(f"     → {len(agg2)}행 저장")
 
 
-# ── 3. 선데이 이벤트별 변화율 집계 ───────────────────────────────────────
-print("[3/7] 선데이 데이터 준비 중...")
+# ── 3. 썬데이 이벤트별 변화율 집계 ───────────────────────────────────────
+print("[3/7] 썬데이 데이터 준비 중...")
 sunday_rows = []
 if os.path.exists(SUNDAY_LOG_PATH):
     with open(SUNDAY_LOG_PATH, 'r', encoding='utf-8') as f:
