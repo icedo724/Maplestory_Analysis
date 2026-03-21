@@ -1,6 +1,6 @@
-# 메이플스토리 쇼케이스 영향 분석
+# 메이플스토리 고레벨 유저 경험치 분석
 
-넥슨 오픈API로 수집한 실제 유저 데이터를 바탕으로 쇼케이스 전후 경험치 획득량 변화와 이벤트 유형별 효율 차이를 통계적으로 검증합니다.
+넥슨 오픈API로 수집한 실제 유저 데이터를 바탕으로 다양한 요인에 의한 유저의 경험치 변동을 확인합니다.
 
 [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
 
@@ -19,51 +19,17 @@
 
 - 수요일 시작 7일 단위 요일별 평균 경험치 분포 제공
 - 주차 × 요일 히트맵으로 시기별 사냥 패턴 시각화
-- 메요일(목) / 선데이(일) 강조 표시
+- 메요일(목) / 썬데이(일) 강조 표시
 
-### 3. 선데이 이벤트 심층 분석
+### 3. 썬데이 이벤트 심층 분석
 
-- 선데이 이벤트를 경타포스 / 사냥 / 사냥 외 3분류로 구분
+- 썬데이 이벤트를 경타포스 / 사냥 / 사냥 외 3분류로 구분
 - 유저별 Pre 평균 대비 상대 경험치 비율로 레벨 구간 간 기저 차이 제거
 - One-way ANOVA + Tukey HSD 사후 검정으로 이벤트 유형 간 유의성 검증
-- 분위수 기반 박스플롯(p5/p25/median/p75/p95) 제공
+- 분위수 기반 박스플롯 제공
 
 ### 4. 이벤트 기간 영향 분석
 
-- `eventlog.txt`에 기간·이름·유형을 등록하면 자동으로 이벤트 영향 집계
-- 쇼케이스 이후 비이벤트 구간 대비 이벤트 기간 변화율 비교
+- `eventlog.txt`에 등록된 이벤트에 대해 영향 집계
 - 구간별 대응표본 t-검정 결과 제공
 - 쇼케이스 이후 일별 추이에 이벤트 기간 하이라이트
-
----
-
-## 데이터 파이프라인
-
-```
-A_get_showcase_impact.py   넥슨 오픈API 일별 경험치 수집
-B_preprocessing.py         레벨업 보정, 유령·이탈 유저 필터링, API 미갱신 감지
-C_export_agg.py            원본(152MB) → 집계 파일(~50KB) 변환
-D_analysis.py              통계 분석 결과 터미널 출력
-E_showcase_dashboard.py    Streamlit 대시보드
-```
-
-```bash
-pip install -r requirements.txt
-echo "YOUR_NEXON_API_KEY" > config/api.txt
-
-python scripts/01_showcase/A_get_showcase_impact.py
-python scripts/01_showcase/B_preprocessing.py
-python scripts/01_showcase/C_export_agg.py
-streamlit run scripts/01_showcase/E_showcase_dashboard.py
-```
-
----
-
-## 기술 스택
-
-| 구분 | 내용 |
-|---|---|
-| 데이터 수집 | 넥슨 오픈API, requests |
-| 데이터 처리 | pandas, numpy |
-| 통계 분석 | scipy, statsmodels |
-| 시각화·배포 | Plotly, Streamlit Cloud |
