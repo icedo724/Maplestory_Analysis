@@ -90,18 +90,8 @@ def preprocess_for_analysis():
         print("[오류] 비교할 일자 데이터가 부족합니다 (최소 2일 필요).")
         sys.exit()
 
-    # -------------------------------------------------------
-    # character_exp = 현재 레벨에서 쌓인 경험치 (레벨업 시 0으로 리셋)
-    # → 레벨업이 없는 날: diff = curr - prev (양수, 정상)
-    # → 레벨업이 있는 날: curr < prev → 음수 발생
-    #
-    # 레벨업 보정 공식:
-    #   실제 획득량 = (전날 레벨 요구 경험치 - prev_exp) + curr_exp
-    #   (= 레벨업 직전까지 남은 경험치 + 레벨업 후 새 레벨에서 쌓은 경험치)
-    #
-    # 신규 진입 유저 (284→285 편입):
-    #   prev_exp = NaN → diff = NaN → Daily = NaN (정상, 0 처리 금지)
-    # -------------------------------------------------------
+    # 레벨업 보정: diff < 0 시 (요구치 - prev_exp) + curr_exp 로 재계산
+    # 신규 진입 유저(prev_exp=NaN)는 NaN 유지
 
     # 레벨별 요구 경험치
     LEVEL_REQ_EXP = {
@@ -193,8 +183,7 @@ def preprocess_for_analysis():
     pre_cols  = [c for c in daily_cols if pd.to_datetime(c.replace('Daily_', '')) <= showcase_dt]
     post_cols = [c for c in daily_cols if pd.to_datetime(c.replace('Daily_', '')) > showcase_dt]
 
-    # 접속 안 한 날(0)은 평균에 포함 → 실제 활동성 반영
-    # NaN(수집 안 된 날 or 신규 진입 이전)은 평균에서 제외 (skipna=True 기본값)
+    # 0(비접속)은 포함, NaN(수집 공백/신규 진입 이전)은 제외
     df['Pre_Avg']  = df[pre_cols].mean(axis=1)  if pre_cols  else np.nan
     df['Post_Avg'] = df[post_cols].mean(axis=1) if post_cols else np.nan
 
@@ -202,9 +191,7 @@ def preprocess_for_analysis():
     df['Pre_Valid_Days']  = df[pre_cols].notna().sum(axis=1)  if pre_cols  else 0
     df['Post_Valid_Days'] = df[post_cols].notna().sum(axis=1) if post_cols else 0
 
-    # ── 필터 1: 전 기간 경험치 합이 0 or 전부 NaN인 유저 제거 ──────────────
-    # - 300레벨은 경험치가 원래 안 오르므로 필터 제외
-    # - min_count=1: 전부 NaN이면 NaN 반환 → 신규 유저와 진짜 유령 유저 구분
+    # 필터 1: 전 기간 경험치 합 0 또는 전부 NaN 유저 제거 (300레벨 제외)
     daily_sum  = df[daily_cols].sum(axis=1, min_count=1)
     ghost_mask = (daily_sum == 0) & (~is_lv300)
     nan_mask   = daily_sum.isna()
@@ -213,14 +200,11 @@ def preprocess_for_analysis():
     df = df[~ghost_mask & ~nan_mask]
     print(f"   [필터 1] 전 기간 경험치 0 유저 {before - len(df)}명 제거 → 잔여 {len(df)}명")
 
-    # ── 필터 2: 14일 연속 경험치 0인 구간이 존재하는 유저 제거 (이탈 유저) ──
-    # 7일은 여행 등 단기 공백으로 볼 수 있지만 14일 연속 0은 사실상 이탈로 판단.
-    # - 0(비접속)과 NaN(수집 없음)을 구분: NaN은 연속 0 카운트에 포함하지 않음
-    # - 300레벨은 경험치가 항상 0이므로 제외
+    # 필터 2: 14일 이상 연속 경험치 0 유저 제거 (이탈 유저, NaN은 미포함, 300레벨 제외)
     INACTIVE_THRESHOLD = 14
 
     def has_inactive_streak(row, threshold):
-        """threshold일 이상 연속으로 경험치가 0(NaN 아님)인 구간이 있는지 확인."""
+        """연속 0 구간이 threshold일 이상인지 확인 (NaN은 카운트 제외)"""
         streak = 0
         for v in row:
             if pd.isna(v):

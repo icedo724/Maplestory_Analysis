@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 # ================= CONFIG =================
-st.set_page_config(page_title="메이플 쇼케이스 영향 분석", page_icon="📊", layout="wide")
+st.set_page_config(page_title="메이플 쇼케이스 영향 분석", layout="wide")
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 base_dir    = os.path.dirname(os.path.dirname(current_dir))
@@ -19,50 +19,46 @@ SHOWCASE_DATE = "2025-12-13"
 @st.cache_data
 def load_agg():
     def p(name): return os.path.join(AGG_DIR, name)
-    daily   = pd.read_csv(p('agg_daily_segment.csv'),   parse_dates=['date'])
-    summary = pd.read_csv(p('agg_segment_summary.csv'))
-    sun_ev  = pd.read_csv(p('agg_sunday_events.csv'),   parse_dates=['Date'])
-    sun_box = pd.read_csv(p('agg_sunday_box.csv'))
-    anova   = pd.read_csv(p('agg_anova.csv'))
-    weekday = pd.read_csv(p('agg_weekday.csv'))
-    job     = pd.read_csv(p('agg_job_summary.csv'))
-    tukey_path = p('agg_tukey.csv')
-    tukey   = pd.read_csv(tukey_path) if os.path.exists(tukey_path) else pd.DataFrame()
-    return daily, summary, sun_ev, sun_box, anova, weekday, job, tukey
+    daily        = pd.read_csv(p('agg_daily_segment.csv'),  parse_dates=['date'])
+    summary      = pd.read_csv(p('agg_segment_summary.csv'))
+    sun_ev       = pd.read_csv(p('agg_sunday_events.csv'),  parse_dates=['Date'])
+    sun_box      = pd.read_csv(p('agg_sunday_box.csv'))
+    anova        = pd.read_csv(p('agg_anova.csv'))
+    weekday      = pd.read_csv(p('agg_weekday.csv'))
+    tukey_path   = p('agg_tukey.csv')
+    tukey        = pd.read_csv(tukey_path) if os.path.exists(tukey_path) else pd.DataFrame()
+    event_path   = p('agg_event_impact.csv')
+    event_impact = pd.read_csv(event_path) if os.path.exists(event_path) else pd.DataFrame()
+    return daily, summary, sun_ev, sun_box, anova, weekday, tukey, event_impact
 
 
 def main():
     if not os.path.exists(AGG_DIR):
-        st.error(f"집계 데이터 폴더가 없습니다: `{AGG_DIR}`  \n"
-                 "E_export_agg.py를 먼저 실행해 주세요.")
+        st.error(f"집계 데이터 폴더가 없습니다: `{AGG_DIR}`\nE_export_agg.py를 먼저 실행해 주세요.")
         return
 
-    daily, summary, sun_ev, sun_box, anova, weekday, job, tukey = load_agg()
+    daily, summary, sun_ev, sun_box, anova, weekday, tukey, event_impact = load_agg()
 
-    # 메타 정보
-    sym_days   = int(summary['sym_days'].iloc[0])
-    data_start = summary['data_start'].iloc[0]
-    data_end   = summary['data_end'].iloc[0]
-    total_n    = int(summary['n'].sum())
+    sym_days    = int(summary['sym_days'].iloc[0])
+    data_start  = summary['data_start'].iloc[0]
+    data_end    = summary['data_end'].iloc[0]
+    total_n     = int(summary['n'].sum())
     showcase_dt = pd.to_datetime(SHOWCASE_DATE)
-    sym_start  = showcase_dt - pd.Timedelta(days=sym_days)
-    sym_end    = showcase_dt + pd.Timedelta(days=sym_days)
+    sym_start   = showcase_dt - pd.Timedelta(days=sym_days)
+    sym_end     = showcase_dt + pd.Timedelta(days=sym_days)
 
-    st.title("📊 메이플스토리 쇼케이스 영향 분석 대시보드")
-    st.caption(f"쇼케이스: {SHOWCASE_DATE}  |  분석 대상: {total_n:,}명  |"
-               f"  수집 기간: {data_start} ~ {data_end}")
+    st.title("메이플스토리 쇼케이스 영향 분석 대시보드")
+    st.caption(f"쇼케이스: {SHOWCASE_DATE}  |  분석 대상: {total_n:,}명  |  수집 기간: {data_start} ~ {data_end}")
     st.divider()
 
     tab1, tab2, tab3, tab4 = st.tabs([
-        "🎯 쇼케이스 영향 (Pre vs Post)",
-        "📅 주간 패턴 (메요일/선데이)",
-        "☀️ 선데이 이벤트 심층 분석",
-        "🔍 직업군 반응 비교",
+        "쇼케이스 영향 (Pre vs Post)",
+        "주간 패턴 (요일/선데이)",
+        "선데이 이벤트 심층 분석",
+        "이벤트 기간 영향 분석",
     ])
 
-    # ──────────────────────────────────────────
-    # TAB 1: 쇼케이스 영향 분석
-    # ──────────────────────────────────────────
+    # ── TAB 1: 쇼케이스 전후 영향 ────────────────────────────────────────
     with tab1:
         st.markdown("쇼케이스 전후 **동일한 기간**을 기준으로 레벨링 동기 변화를 분석합니다.")
         st.info(f"**대칭 분석 기간:** {sym_start.strftime('%Y-%m-%d')} ~ {sym_end.strftime('%Y-%m-%d')}"
@@ -84,9 +80,9 @@ def main():
 
         with col2:
             st.subheader("레벨 구간별 평상시 대비 변화율 (%)")
-            baseline = summary.set_index('segment')['pre_avg'].to_dict()
-            df_sym2  = df_sym.copy()
-            df_sym2['baseline'] = df_sym2['segment'].map(baseline)
+            baseline     = summary.set_index('segment')['pre_avg'].to_dict()
+            df_sym2      = df_sym.copy()
+            df_sym2['baseline']  = df_sym2['segment'].map(baseline)
             df_sym2['Exp_Ratio'] = df_sym2['avg_exp'] / df_sym2['baseline'] * 100
 
             fig_seg = px.line(df_sym2, x='date', y='Exp_Ratio', color='segment', markers=True,
@@ -98,7 +94,7 @@ def main():
             st.plotly_chart(fig_seg, use_container_width=True)
 
         st.divider()
-        st.subheader("🧪 통계 검증: 쇼케이스 전/후 유의미한 변화가 있었는가?")
+        st.subheader("통계 검증: 쇼케이스 전/후 유의미한 변화가 있었는가?")
         st.caption(f"대칭 기간 ±{sym_days}일 기준")
 
         c_bar, c_stat = st.columns([2, 1.5])
@@ -114,19 +110,16 @@ def main():
         with c_stat:
             st.markdown("#### 대응표본 t-검정 결과")
             for _, row in summary.iterrows():
-                p = row['p_value']
-                is_inc   = row['post_avg'] > row['pre_avg']
-                dir_icon = "📈 증가" if is_inc else "📉 감소"
-                sig = ("매우 유의미 (⭐⭐⭐)" if p < 0.001
-                       else "유의미 (⭐)" if p < 0.05
-                       else "차이 없음 (❌)")
+                p        = row['p_value']
+                dir_label = "증가" if row['post_avg'] > row['pre_avg'] else "감소"
+                sig       = ("매우 유의미 (***)" if p < 0.001
+                             else "유의미 (*)" if p < 0.05
+                             else "차이 없음")
                 st.info(f"**[{row['segment']}]** n={int(row['n']):,}\n"
-                        f"* 변화: {dir_icon} ({sig})\n"
+                        f"* 변화: {dir_label} ({sig})\n"
                         f"* P-value: {p:.4e}")
 
-    # ──────────────────────────────────────────
-    # TAB 2: 메요일 / 주간 패턴
-    # ──────────────────────────────────────────
+    # ── TAB 2: 요일별 / 주간 패턴 ────────────────────────────────────────
     with tab2:
         st.markdown("수요일 시작 7일 단위로 요일별 사냥 패턴을 분석합니다.")
         day_order = ['수', '목', '금', '토', '일', '월', '화']
@@ -135,10 +128,10 @@ def main():
         with col_s1:
             all_weeks = sorted(weekday['week_idx'].unique())
             opts_w    = ["전체 주차 (평균)"] + [f"{w}주차" for w in all_weeks]
-            sel_w     = st.selectbox("📅 주차 선택:", opts_w)
+            sel_w     = st.selectbox("주차 선택:", opts_w)
         with col_s2:
             opts_s = ["전체 유저"] + sorted(weekday['segment'].dropna().unique().tolist())
-            sel_s  = st.selectbox("📊 그룹 선택:", opts_s)
+            sel_s  = st.selectbox("그룹 선택:", opts_s)
 
         f_df = weekday.copy()
         if sel_w != "전체 주차 (평균)":
@@ -163,7 +156,7 @@ def main():
                                 showarrow=False, font=dict(color="green"), textangle=-90)
         st.plotly_chart(fig_week, use_container_width=True)
 
-        st.subheader("주차 × 요일 히트맵")
+        st.subheader("주차 x 요일 히트맵")
         hm_df = weekday.copy()
         if sel_s != "전체 유저":
             hm_df = hm_df[hm_df['segment'] == sel_s]
@@ -184,9 +177,7 @@ def main():
                                annotation_text="쇼케이스", annotation_position="right")
         st.plotly_chart(fig_heat, use_container_width=True)
 
-    # ──────────────────────────────────────────
-    # TAB 3: 선데이 메이플 이벤트 심층 분석
-    # ──────────────────────────────────────────
+    # ── TAB 3: 선데이 이벤트 심층 분석 ──────────────────────────────────
     with tab3:
         st.markdown(
             "선데이 메이플 이벤트 종류(경타포스 / 사냥 / 사냥 외)에 따라 "
@@ -200,16 +191,16 @@ def main():
         col_sub1, col_sub2 = st.columns([1, 2.5])
 
         with col_sub1:
-            st.info("📌 선데이 분류 현황")
+            st.info("선데이 분류 현황")
             log_display = (sun_ev[['Date', 'Sunday_Type', 'Event_Category']]
                            .drop_duplicates()
                            .sort_values('Date'))
-            log_display['Date'] = log_display['Date'].dt.strftime('%Y-%m-%d')
+            log_display['Date']        = log_display['Date'].dt.strftime('%Y-%m-%d')
             log_display['Sunday_Type'] = log_display['Sunday_Type'].fillna('기록없음(일반)')
             st.dataframe(log_display.reset_index(drop=True), use_container_width=True)
 
             sel_seg_sun = st.selectbox(
-                "📊 분석 그룹:",
+                "분석 그룹:",
                 ["전체 유저"] + sorted(sun_box['scope'].unique().tolist()),
                 key='sun_seg'
             )
@@ -243,7 +234,6 @@ def main():
             )
             st.plotly_chart(fig_box, use_container_width=True)
 
-        # 카테고리별 평균 변화율 막대차트
         st.subheader("이벤트 유형별 평균 변화율 비교")
         box_all = sun_box[sun_box['scope'] == scope_key].copy()
         box_all['category'] = pd.Categorical(box_all['category'], categories=cat_order, ordered=True)
@@ -260,17 +250,17 @@ def main():
 
         n_info = "  |  ".join([f"**{r['category']}** n={int(r['n']):,}"
                                for _, r in box_all.iterrows()])
-        st.caption(f"그룹별 (날짜 × 유저) 샘플 수: {n_info}")
+        st.caption(f"그룹별 (날짜 x 유저) 샘플 수: {n_info}")
 
         st.divider()
-        st.subheader("🧪 ANOVA 검정: 이벤트 유형에 따른 사냥량 변화율 차이")
+        st.subheader("ANOVA 검정: 이벤트 유형에 따른 사냥량 변화율 차이")
         st.caption("귀무가설: 모든 이벤트 유형에서 평상시 대비 사냥량 변화율이 동일하다.")
 
         anova_row = anova[anova['scope'] == scope_key]
         if not anova_row.empty:
-            r       = anova_row.iloc[0]
-            f_stat  = r['f_stat']
-            p_val   = r['p_value']
+            r         = anova_row.iloc[0]
+            f_stat    = r['f_stat']
+            p_val     = r['p_value']
             mean_cols = {c.replace('mean_', ''): r[c]
                          for c in r.index if c.startswith('mean_')}
             means_text = " | ".join([f"**{k}**: {v:.1f}%" for k, v in mean_cols.items()])
@@ -293,87 +283,88 @@ def main():
                 st.markdown("#### 사후 검정 (Tukey HSD): 어떤 그룹 간 차이가 있는가?")
                 tukey_scope = tukey[tukey['scope'] == scope_key].copy()
                 tukey_scope['유의미'] = tukey_scope['reject'].apply(
-                    lambda x: "✅ 차이 있음" if x else "❌ 차이 없음"
+                    lambda x: "차이 있음" if x else "차이 없음"
                 )
                 st.dataframe(
                     tukey_scope[['group1', 'group2', 'meandiff', 'p-adj', '유의미']],
                     use_container_width=True
                 )
 
-    # ──────────────────────────────────────────
-    # TAB 4: 직업군 반응 비교
-    # ──────────────────────────────────────────
+    # ── TAB 4: 이벤트 기간 영향 분석 ─────────────────────────────────────
     with tab4:
         st.markdown(
-            "쇼케이스에서 발표된 **특정 직업군 유저**와 나머지 유저의 반응 차이를 비교합니다.  \n"
-            "쇼케이스 콘텐츠가 자신의 직업과 관련될 때 더 강하게 레벨링 동기가 올라가는지 확인할 수 있습니다."
+            "쇼케이스 이후 기간 중 특정 이벤트 구간과 비이벤트 구간을 비교하여 "
+            "이벤트가 경험치 획득량에 미친 추가 효과를 검증합니다."
         )
 
-        job_list = sorted(job['job'].dropna().unique().tolist())
+        if event_impact.empty:
+            st.info("이벤트 영향 분석 데이터가 없습니다. E_export_agg.py를 실행해 주세요.")
+        else:
+            events_list = (event_impact[['event_name', 'event_type', 'event_start', 'event_end']]
+                           .drop_duplicates())
+            sel_event = st.selectbox("이벤트 선택:", events_list['event_name'].tolist())
 
-        col_j1, col_j2 = st.columns([1, 2])
-        with col_j1:
-            st.markdown("#### 발표 직업군 선택")
-            selected_jobs = st.multiselect("직업 선택 (복수 가능):", options=job_list,
-                                           default=[], key='job_select')
-            sel_seg_job = st.selectbox("레벨 구간 필터:",
-                                       ["전체"] + sorted(job['segment'].dropna().unique().tolist()),
-                                       key='seg_job')
+            ev_data = event_impact[event_impact['event_name'] == sel_event]
+            ev_meta = events_list[events_list['event_name'] == sel_event].iloc[0]
 
-        with col_j2:
-            if not selected_jobs:
-                st.info("왼쪽에서 쇼케이스 발표 직업군을 선택하면 비교 분석이 시작됩니다.")
+            st.info(f"**{ev_meta['event_name']}** "
+                    f"({ev_meta['event_start']} ~ {ev_meta['event_end']})  |  "
+                    f"유형: {ev_meta['event_type']}")
 
-                # 선택 전에는 전체 직업 변화율 순위 표시
-                st.subheader("전체 직업별 성장 변화율 순위")
-                job_disp = job.copy()
-                if sel_seg_job != "전체":
-                    job_disp = job_disp[job_disp['segment'] == sel_seg_job]
-                job_disp = job_disp[job_disp['n'] >= 5].sort_values('growth_rate', ascending=True)
-                fig_all = px.bar(job_disp.tail(20), x='growth_rate', y='job',
-                                 orientation='h', color='growth_rate',
-                                 color_continuous_scale='RdYlGn',
-                                 title="상위 20개 직업 성장 변화율 (%)",
-                                 labels={'growth_rate': '변화율 (%)', 'job': '직업'})
-                st.plotly_chart(fig_all, use_container_width=True)
-            else:
-                df_job = job.copy()
-                if sel_seg_job != "전체":
-                    df_job = df_job[df_job['segment'] == sel_seg_job]
+            col_e1, col_e2 = st.columns(2)
 
-                df_job['Group'] = df_job['job'].apply(
-                    lambda j: '발표 직업군' if j in selected_jobs else '기타 직업군'
+            with col_e1:
+                # 구간별 변화율 막대차트
+                fig_ev = px.bar(ev_data, x='segment', y='growth_rate', color='segment',
+                                text='growth_rate',
+                                title="이벤트 기간 vs 비이벤트 기간 변화율 (%)",
+                                labels={'growth_rate': '변화율 (%)', 'segment': '레벨 구간'})
+                fig_ev.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_ev.add_hline(y=0, line_dash="dot", line_color="gray")
+                st.plotly_chart(fig_ev, use_container_width=True)
+
+            with col_e2:
+                # 절대값 비교: 비이벤트 vs 이벤트 평균 경험치
+                ev_melt = ev_data.melt(
+                    id_vars='segment',
+                    value_vars=['non_event_avg', 'event_avg'],
+                    var_name='구간', value_name='평균 경험치'
                 )
-                g = df_job.groupby('Group')
-                group_summary = pd.DataFrame({
-                    'n':        g['n'].sum(),
-                    'pre_avg':  g.apply(lambda x: np.average(x['pre_avg'],  weights=x['n'])),
-                    'post_avg': g.apply(lambda x: np.average(x['post_avg'], weights=x['n'])),
-                }).reset_index()
-                group_summary['growth_rate'] = ((group_summary['post_avg'] - group_summary['pre_avg'])
-                                                / group_summary['pre_avg'] * 100)
+                ev_melt['구간'] = ev_melt['구간'].map(
+                    {'non_event_avg': '비이벤트', 'event_avg': '이벤트'}
+                )
+                fig_cmp = px.bar(ev_melt, x='segment', y='평균 경험치', color='구간',
+                                 barmode='group',
+                                 title="비이벤트 vs 이벤트 기간 평균 경험치",
+                                 labels={'segment': '레벨 구간'})
+                st.plotly_chart(fig_cmp, use_container_width=True)
 
-                fig_job = go.Figure()
-                for grp, color in [('발표 직업군', '#EF553B'), ('기타 직업군', '#636EFA')]:
-                    row = group_summary[group_summary['Group'] == grp]
-                    if row.empty:
-                        continue
-                    fig_job.add_trace(go.Bar(name=f'{grp} Pre',  x=[grp],
-                                            y=row['pre_avg'].values,
-                                            marker_color=color, opacity=0.5, legendgroup=grp))
-                    fig_job.add_trace(go.Bar(name=f'{grp} Post', x=[grp],
-                                            y=row['post_avg'].values,
-                                            marker_color=color, opacity=1.0, legendgroup=grp))
-                fig_job.update_layout(barmode='group',
-                                      title='발표 직업군 vs 기타: Pre / Post 평균 경험치',
-                                      yaxis_title='평균 일일 경험치')
-                st.plotly_chart(fig_job, use_container_width=True)
+            # 쇼케이스 이후 일별 추이에 이벤트 기간 하이라이트
+            st.subheader("쇼케이스 이후 일별 경험치 추이 (이벤트 기간 강조)")
+            post_daily = daily[daily['date'] > pd.to_datetime(SHOWCASE_DATE)].copy()
+            trend_post = post_daily.groupby('date')['avg_exp'].mean().reset_index()
 
-                for _, row in group_summary.iterrows():
-                    sig = "주목 ✅" if abs(row['growth_rate']) > 5 else "미미한 차이"
-                    st.metric(label=f"{row['Group']} (n={int(row['n']):,})",
-                              value=f"{row['growth_rate']:+.1f}%",
-                              delta=f"Pre: {row['pre_avg']:,.0f} → Post: {row['post_avg']:,.0f}")
+            fig_trend = px.line(trend_post, x='date', y='avg_exp', markers=False,
+                                labels={'avg_exp': '평균 일일 경험치', 'date': '날짜'})
+            fig_trend.add_vrect(
+                x0=ev_meta['event_start'], x1=ev_meta['event_end'],
+                fillcolor="LightSalmon", opacity=0.3, layer="below", line_width=0,
+                annotation_text=ev_meta['event_name'], annotation_position="top left"
+            )
+            st.plotly_chart(fig_trend, use_container_width=True)
+
+            # 구간별 t-검정 결과
+            st.subheader("대응표본 t-검정 결과 (구간별)")
+            for _, row in ev_data.iterrows():
+                p         = row['p_value']
+                sig       = ("매우 유의미 (***)" if p < 0.001
+                             else "유의미 (*)" if p < 0.05
+                             else "차이 없음")
+                direction = "증가" if row['event_avg'] > row['non_event_avg'] else "감소"
+                rate      = row['growth_rate']
+                st.info(f"**[{row['segment']}]** n={int(row['n']):,}\n"
+                        f"* 변화: {direction} ({rate:+.1f}%)  ({sig})\n"
+                        f"* P-value: {p:.4e}")
 
 
 if __name__ == "__main__":

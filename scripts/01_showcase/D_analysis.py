@@ -10,6 +10,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 BASE_DIR        = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "showcase", "preprocessed", "daily_segment_processed.csv")
 SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "showcase", "sundaylog.txt")
+EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "showcase", "eventlog.txt")
 SHOWCASE_DATE   = "2025-12-13"
 MIN_VALID_DAYS  = 7
 # ==========================================
@@ -328,6 +329,70 @@ print(job_summary.head(10)[['job', 'n', 'pre_avg', 'post_avg', '변화율(%)']].
 
 subsection("4-2. 변화율 하위 10개 직업군 (n≥5)")
 print(job_summary.tail(10)[['job', 'n', 'pre_avg', 'post_avg', '변화율(%)']].to_string(index=False))
+
+# ══════════════════════════════════════════════════════════════════════
+# [5] 이벤트 기간 영향 분석
+# ══════════════════════════════════════════════════════════════════════
+section("[5] 이벤트 기간 영향 분석 (이벤트 vs 비이벤트 Post 구간)")
+
+showcase_dt_ev  = pd.to_datetime(SHOWCASE_DATE)
+post_daily_cols = [c for c in daily_cols
+                   if pd.to_datetime(c.replace('Daily_', '')) - pd.Timedelta(days=1) > showcase_dt_ev]
+
+event_defs = []
+if os.path.exists(EVENT_LOG_PATH):
+    with open(EVENT_LOG_PATH, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if '~' in line and ':' in line:
+                date_range, rest = line.split(':', 1)
+                parts = rest.split(':', 1)
+                start_str, end_str = date_range.split('~')
+                event_defs.append({
+                    'start':      pd.to_datetime(start_str.strip()),
+                    'end':        pd.to_datetime(end_str.strip()),
+                    'event_name': parts[0].strip(),
+                    'event_type': parts[1].strip() if len(parts) > 1 else '',
+                })
+else:
+    print("[주의] eventlog.txt 없음")
+
+for ev in event_defs:
+    subsection(f"{ev['event_name']} ({ev['start'].date()} ~ {ev['end'].date()}) [{ev['event_type']}]")
+
+    ev_cols  = [c for c in post_daily_cols
+                if ev['start'] <= pd.to_datetime(c.replace('Daily_', '')) - pd.Timedelta(days=1) <= ev['end']]
+    non_cols = [c for c in post_daily_cols if c not in ev_cols]
+
+    if not ev_cols:
+        print("[주의] 해당 기간의 데이터 없음")
+        continue
+
+    print(f"이벤트 기간 일수 : {len(ev_cols)}일  |  비이벤트 Post 일수: {len(non_cols)}일\n")
+
+    df_ev = df.copy()
+    ev_valid  = df_ev[ev_cols].notna().sum(axis=1)
+    non_valid = df_ev[non_cols].notna().sum(axis=1)
+    df_ev = df_ev[(ev_valid >= MIN_VALID_DAYS) & (non_valid >= MIN_VALID_DAYS)]
+    df_ev['event_avg']  = df_ev[ev_cols].mean(axis=1)
+    df_ev['non_ev_avg'] = df_ev[non_cols].mean(axis=1)
+    print(f"(유효 유저 {MIN_VALID_DAYS}일 미만 제외 후 {len(df_ev):,}명 사용)\n")
+
+    print(f"{'구간':<14} {'n':>6}  {'비이벤트 평균':>18}  {'이벤트 평균':>18}  {'변화율(%)':>9}  {'t-stat':>8}  {'p-value':>12}  판정")
+    print("-" * 100)
+
+    for seg in sorted(df_ev['segment'].dropna().unique()):
+        sd = df_ev[df_ev['segment'] == seg].dropna(subset=['event_avg', 'non_ev_avg'])
+        if len(sd) < 5:
+            continue
+        t_stat_val, p_val = stats.ttest_rel(sd['non_ev_avg'], sd['event_avg'])
+        ne_m  = sd['non_ev_avg'].mean()
+        ev_m  = sd['event_avg'].mean()
+        rate  = (ev_m - ne_m) / ne_m * 100
+        sig   = "★★★ p<0.001" if p_val < 0.001 else ("★ p<0.05" if p_val < 0.05 else "비유의")
+        arrow = "▲" if ev_m > ne_m else "▼"
+        print(f"{seg:<14} {len(sd):>6}  {ne_m:>18,.0f}  {ev_m:>18,.0f}  {rate:>+8.1f}%  "
+              f"{t_stat_val:>8.3f}  {p_val:>12.4e}  {arrow} {sig}")
 
 print(f"\n{SEP}")
 print("  분석 완료")
