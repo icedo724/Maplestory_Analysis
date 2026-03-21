@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "A: 쇼케이스 데이터 수집",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/01_showcase/A_get_showcase_impact.py",
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "B: 전처리",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/01_showcase/B_preprocessing.py",
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "C: 쇼케이스 대시보드 (Streamlit)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${workspaceFolder}/scripts/01_showcase/C_showcase_dashboard.py",
+                "--server.headless", "false"
+            ],
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
