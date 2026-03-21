@@ -72,12 +72,12 @@ class KeyManager:
         print("-" * 50)
 
     def get_current_key(self):
-        if self.current_idx >= len(self.keys): return None
-        curr = self.keys[self.current_idx]
-        if (curr in self.dead_keys) or (self.usage_map.get(curr, 0) >= DAILY_LIMIT_PER_KEY):
+        while self.current_idx < len(self.keys):
+            curr = self.keys[self.current_idx]
+            if curr not in self.dead_keys and self.usage_map.get(curr, 0) < DAILY_LIMIT_PER_KEY:
+                return curr
             self.switch_next()
-            return self.get_current_key()
-        return curr
+        return None
 
     def add_usage(self):
         k = self.get_current_key()
@@ -135,11 +135,9 @@ if __name__ == "__main__":
 
     key_manager = KeyManager(KEY_PATH)
 
-    # 1. 완료된 날짜 로드
     completed_dates = load_completed_dates()
     print(f"[정보] 완료된 날짜 수: {len(completed_dates)}")
 
-    # 2. 메인 데이터 파일 준비
     tracked_names = set()
     if os.path.exists(OUTPUT_FILE):
         df_m = pd.read_csv(OUTPUT_FILE)
@@ -148,7 +146,6 @@ if __name__ == "__main__":
     else:
         df_m = pd.DataFrame(columns=['name', 'job', 'world'])
 
-    # 3. 수집 대상 날짜
     today = datetime.now().strftime("%Y-%m-%d")
     all_dates = get_date_range(START_DATE, today)
     target_dates = [d for d in all_dates if d not in completed_dates]
@@ -254,16 +251,13 @@ if __name__ == "__main__":
             for user in data:
                 lv = user['character_level']
                 nm = user['character_name']
-                # 수집 조건
-                if (MIN_ENTRY_LV <= lv < MAX_ENTRY_LV) or (nm in tracked_names):
-                    # 중복 방지 (이어하기 시 겹칠 수 있으므로)
-                    if nm not in daily_names:
-                        daily_data.append({
-                            'name': nm, 'job': user['class_name'], 'world': user['world_name'],
-                            f"Lv_{target_date}": lv, f"Exp_{target_date}": user['character_exp']
-                        })
-                        daily_names.add(nm)
-                        tracked_names.add(nm)
+                if ((MIN_ENTRY_LV <= lv < MAX_ENTRY_LV) or (nm in tracked_names)) and nm not in daily_names:
+                    daily_data.append({
+                        'name': nm, 'job': user['class_name'], 'world': user['world_name'],
+                        f"Lv_{target_date}": lv, f"Exp_{target_date}": user['character_exp']
+                    })
+                    daily_names.add(nm)
+                    tracked_names.add(nm)
 
             # 페이지 단위 임시 저장
             if daily_data:

@@ -212,28 +212,17 @@ def preprocess_for_analysis():
     # 필터 2: 14일 이상 연속 경험치 0 유저 제거 (이탈 유저, NaN은 미포함, 300레벨 제외)
     INACTIVE_THRESHOLD = 14
 
-    def has_inactive_streak(row, threshold):
-        """연속 0 구간이 threshold일 이상인지 확인 (NaN은 카운트 제외)"""
-        streak = 0
-        for v in row:
-            if pd.isna(v):
-                streak = 0        # NaN은 연속 카운트 리셋 (수집 공백은 이탈로 보지 않음)
-            elif v == 0:
-                streak += 1
-                if streak >= threshold:
-                    return True
-            else:
-                streak = 0
-        return False
-
     # 300레벨 유저는 검사 제외 후 다시 합치기
     is_lv300_now = (df[target_lv_col] == 300)
     df_300  = df[is_lv300_now]
     df_rest = df[~is_lv300_now]
 
-    inactive_mask = df_rest[daily_cols].apply(
-        lambda row: has_inactive_streak(row, INACTIVE_THRESHOLD), axis=1
-    )
+    # 연속 0 감지: NaN 제외, numpy 슬라이딩 윈도우로 벡터화
+    zero_mat     = (df_rest[daily_cols] == 0).fillna(False).to_numpy()
+    inactive_arr = np.zeros(len(df_rest), dtype=bool)
+    for i in range(zero_mat.shape[1] - INACTIVE_THRESHOLD + 1):
+        inactive_arr |= zero_mat[:, i:i + INACTIVE_THRESHOLD].all(axis=1)
+    inactive_mask = pd.Series(inactive_arr, index=df_rest.index)
 
     before = len(df)
     df_rest = df_rest[~inactive_mask]
