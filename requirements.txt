@@ -3,6 +3,6 @@ pandas
 openpyxl
 scipy
 numpy
-streamlit
+streamlit>=1.40.0
 plotly
 statsmodels
