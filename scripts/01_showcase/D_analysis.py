@@ -199,15 +199,13 @@ if os.path.exists(SUNDAY_LOG_PATH):
 
 def classify_sunday_event(event_str):
     if pd.isna(event_str):
-        return '기타'
-    event_str = str(event_str)
-    if '경타포스' in event_str:
+        return '사냥 외'
+    s = str(event_str)
+    if '경타포스' in s:
         return '경타포스'
-    elif any(k in event_str for k in ['몬파', '룬콤보', '트레져', '솔에르다', '사냥']):
+    if any(k in s for k in ['트레져', '룬콤보', '솔에르다', '사냥']):
         return '사냥'
-    elif any(k in event_str for k in ['강화', '샤타포스', '미라클']):
-        return '강화'
-    return '기타'
+    return '사냥 외'
 
 # 누락 선데이 체크
 all_sundays = sorted(melted[melted['DayOfWeek'] == 6]['Date'].dt.normalize().unique())
@@ -242,7 +240,7 @@ print(log_display.to_string(index=False))
 # 3-2. 이벤트 유형별 변화율 통계
 subsection("3-2. 이벤트 유형별 평상시 대비 변화율 통계")
 
-cat_order = ['경타포스', '사냥', '강화', '기타']
+cat_order = ['경타포스', '사냥', '사냥 외']
 cat_stats = (
     df_sun.groupby('Event_Category')['Exp_Ratio']
     .agg(n='count', mean='mean', median='median', std='std',

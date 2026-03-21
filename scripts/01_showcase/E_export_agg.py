@@ -100,12 +100,11 @@ if os.path.exists(SUNDAY_LOG_PATH):
 sunday_log = pd.DataFrame(sunday_rows)
 
 def classify_sunday_event(event_str):
-    if pd.isna(event_str): return '기타'
+    if pd.isna(event_str): return '사냥 외'
     s = str(event_str)
     if '경타포스' in s: return '경타포스'
-    if any(k in s for k in ['몬파', '룬콤보', '트레져', '솔에르다', '사냥']): return '사냥'
-    if any(k in s for k in ['강화', '샤타포스', '미라클']): return '강화'
-    return '기타'
+    if any(k in s for k in ['트레져', '룬콤보', '솔에르다', '사냥']): return '사냥'
+    return '사냥 외'
 
 df_sun = melted[melted['DayOfWeek'] == 6].copy()
 if not sunday_log.empty:
@@ -134,7 +133,7 @@ print(f"     → {len(agg3)}행 저장")
 
 # 3b. 박스플롯용 분위수 (go.Box precomputed 방식)
 print("[4/7] agg_sunday_box 생성 중...")
-cat_order = ['경타포스', '사냥', '강화', '기타']
+cat_order = ['경타포스', '사냥', '사냥 외']
 box_rows = []
 for scope, subset in [('전체', df_sun_clean)] + [(seg, df_sun_clean[df_sun_clean['segment'] == seg])
                                                    for seg in sorted(df_sun_clean['segment'].dropna().unique())]:
