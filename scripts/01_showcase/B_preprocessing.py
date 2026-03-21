@@ -129,6 +129,15 @@ def preprocess_for_analysis():
         prev_lv  = df.get(f'Lv_{prev_d}')
         curr_lv  = df.get(f'Lv_{curr_d}')
 
+        # API 미갱신 감지: 전날과 당일 스냅샷이 95% 이상 동일하면 해당 날 제외
+        # (prev는 다음 날 계산 기준으로 유지)
+        both = pd.concat([prev_exp.rename('p'), curr_exp.rename('c')], axis=1).dropna()
+        if len(both) > 100:
+            freeze_rate = (both['p'] == both['c']).mean()
+            if freeze_rate > 0.95:
+                print(f"   [제외] {curr_d}: API 미갱신 ({freeze_rate*100:.1f}% 동일) → Daily 제외")
+                continue
+
         diff = curr_exp - prev_exp
 
         # 레벨업 감지: diff < 0 이고 레벨이 올랐을 때
