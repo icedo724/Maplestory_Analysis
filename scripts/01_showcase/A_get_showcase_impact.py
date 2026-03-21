@@ -4,7 +4,6 @@ import time
 import os
 import sys
 import urllib3
-import shutil
 from datetime import datetime, timedelta
 
 # SSL 경고 무시
@@ -169,12 +168,14 @@ if __name__ == "__main__":
         temp_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}.csv")
         page_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}_page.txt")
         daily_data = []
+        daily_names = set()
         start_page = 1
 
         if os.path.exists(temp_file_path):
             try:
                 df_temp = pd.read_csv(temp_file_path)
                 daily_data = df_temp.to_dict('records')
+                daily_names = {r['name'] for r in daily_data}
                 collected_count = len(daily_data)
                 if os.path.exists(page_file_path):
                     with open(page_file_path, 'r') as pf:
@@ -256,17 +257,12 @@ if __name__ == "__main__":
                 # 수집 조건
                 if (MIN_ENTRY_LV <= lv < MAX_ENTRY_LV) or (nm in tracked_names):
                     # 중복 방지 (이어하기 시 겹칠 수 있으므로)
-                    exists = False
-                    for existing in daily_data:
-                        if existing['name'] == nm:
-                            exists = True
-                            break
-
-                    if not exists:
+                    if nm not in daily_names:
                         daily_data.append({
                             'name': nm, 'job': user['class_name'], 'world': user['world_name'],
                             f"Lv_{target_date}": lv, f"Exp_{target_date}": user['character_exp']
                         })
+                        daily_names.add(nm)
                         tracked_names.add(nm)
 
             # [핵심] 매 페이지마다 임시 파일 저장 (안전장치)

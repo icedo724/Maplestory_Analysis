@@ -189,8 +189,9 @@ def preprocess_for_analysis():
     print("[진행] 쇼케이스 전후 평균 계산 중...")
     # Daily_YYYY-MM-DD = 전날 → 당일 증분
     # Daily_2025-12-13 = 12일→13일 증분 → 쇼케이스 당일 활동 → Pre에 포함
-    pre_cols  = [c for c in daily_cols if c.replace('Daily_', '') <= SHOWCASE_DATE]
-    post_cols = [c for c in daily_cols if c.replace('Daily_', '') > SHOWCASE_DATE]
+    showcase_dt = pd.to_datetime(SHOWCASE_DATE)
+    pre_cols  = [c for c in daily_cols if pd.to_datetime(c.replace('Daily_', '')) <= showcase_dt]
+    post_cols = [c for c in daily_cols if pd.to_datetime(c.replace('Daily_', '')) > showcase_dt]
 
     # 접속 안 한 날(0)은 평균에 포함 → 실제 활동성 반영
     # NaN(수집 안 된 날 or 신규 진입 이전)은 평균에서 제외 (skipna=True 기본값)

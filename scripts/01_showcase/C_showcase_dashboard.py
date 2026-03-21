@@ -344,13 +344,12 @@ def main():
                 df_job['Group'] = df_job['job'].apply(
                     lambda j: '발표 직업군' if j in selected_jobs else '기타 직업군'
                 )
-                group_summary = (df_job.groupby('Group')
-                                 .apply(lambda x: pd.Series({
-                                     'n':          x['n'].sum(),
-                                     'pre_avg':    np.average(x['pre_avg'],  weights=x['n']),
-                                     'post_avg':   np.average(x['post_avg'], weights=x['n']),
-                                 }))
-                                 .reset_index())
+                g = df_job.groupby('Group')
+                group_summary = pd.DataFrame({
+                    'n':        g['n'].sum(),
+                    'pre_avg':  g.apply(lambda x: np.average(x['pre_avg'],  weights=x['n'])),
+                    'post_avg': g.apply(lambda x: np.average(x['post_avg'], weights=x['n'])),
+                }).reset_index()
                 group_summary['growth_rate'] = ((group_summary['post_avg'] - group_summary['pre_avg'])
                                                 / group_summary['pre_avg'] * 100)
 
@@ -371,7 +370,7 @@ def main():
                 st.plotly_chart(fig_job, use_container_width=True)
 
                 for _, row in group_summary.iterrows():
-                    sig = "유의미 ✅" if abs(row['growth_rate']) > 5 else "미미한 차이"
+                    sig = "주목 ✅" if abs(row['growth_rate']) > 5 else "미미한 차이"
                     st.metric(label=f"{row['Group']} (n={int(row['n']):,})",
                               value=f"{row['growth_rate']:+.1f}%",
                               delta=f"Pre: {row['pre_avg']:,.0f} → Post: {row['post_avg']:,.0f}")
