@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 # ================= CONFIG =================
-st.set_page_config(page_title="메이플 쇼케이스 영향 분석", layout="wide")
+st.set_page_config(page_title="메이플스토리 경험치 시계열 분석", layout="wide")
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 base_dir    = os.path.dirname(os.path.dirname(current_dir))
@@ -47,15 +47,15 @@ def main():
     sym_start   = showcase_dt - pd.Timedelta(days=sym_days)
     sym_end     = showcase_dt + pd.Timedelta(days=sym_days)
 
-    st.title("메이플스토리 쇼케이스 영향 분석 대시보드")
+    st.title("메이플스토리 경험치 시계열 분석")
     st.caption(f"쇼케이스: {SHOWCASE_DATE}  |  분석 대상: {total_n:,}명  |  수집 기간: {data_start} ~ {data_end}")
     st.divider()
 
     tab1, tab2, tab3, tab4 = st.tabs([
-        "쇼케이스 영향 (Pre vs Post)",
-        "주간 패턴 (요일/썬데이)",
-        "썬데이 이벤트 심층 분석",
-        "이벤트 기간 영향 분석",
+        "쇼케이스 영향 분석",
+        "주간 패턴 분석",
+        "썬데이 영향 분석",
+        "이벤트별 영향 분석",
     ])
 
     # ── TAB 1: 쇼케이스 전후 영향 ────────────────────────────────────────
@@ -180,9 +180,9 @@ def main():
     # ── TAB 3: 썬데이 이벤트 심층 분석 ──────────────────────────────────
     with tab3:
         st.markdown(
-            "썬데이 메이플 이벤트 종류(경타포스 / 사냥 / 사냥 외)에 따라 "
+            "썬데이 메이플 종류에 따라 "
             "유저들의 **사냥 동기 변화율**이 달라지는지 검증합니다.  \n"
-            "절댓값 경험치가 아닌 **유저별 평상시(Pre_Avg) 대비 해당 썬데이의 변화율**을 "
+            "절댓값 경험치가 아닌 **유저별 평상시 대비 해당 썬데이의 변화율**을 "
             "기준으로 분석하여 레벨 구간 간 기본 경험치 차이를 제거합니다."
         )
 
@@ -293,7 +293,7 @@ def main():
     # ── TAB 4: 이벤트 기간 영향 분석 ─────────────────────────────────────
     with tab4:
         st.markdown(
-            "쇼케이스 이후 기간 중 특정 이벤트 구간과 비이벤트 구간을 비교하여 "
+            "특정 이벤트 구간과 비이벤트 구간을 비교하여"
             "이벤트가 경험치 획득량에 미친 추가 효과를 검증합니다."
         )
 
@@ -340,7 +340,7 @@ def main():
                 st.plotly_chart(fig_cmp, use_container_width=True)
 
             # 쇼케이스 이후 일별 추이에 이벤트 기간 하이라이트
-            st.subheader("쇼케이스 이후 일별 경험치 추이 (이벤트 기간 강조)")
+            st.subheader("쇼케이스 이후 일별 경험치 추이")
             post_daily = daily[daily['date'] > pd.to_datetime(SHOWCASE_DATE)].copy()
             trend_post = post_daily.groupby('date')['avg_exp'].mean().reset_index()
 
