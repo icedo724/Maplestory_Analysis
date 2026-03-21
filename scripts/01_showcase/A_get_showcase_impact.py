@@ -164,7 +164,7 @@ if __name__ == "__main__":
     for target_date in target_dates:
         if stop_all: break
 
-        # [이어하기 로직] 임시 파일 확인
+        # 임시 파일 이어받기
         temp_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}.csv")
         page_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}_page.txt")
         daily_data = []
@@ -265,7 +265,7 @@ if __name__ == "__main__":
                         daily_names.add(nm)
                         tracked_names.add(nm)
 
-            # [핵심] 매 페이지마다 임시 파일 저장 (안전장치)
+            # 페이지 단위 임시 저장
             if daily_data:
                 pd.DataFrame(daily_data).to_csv(temp_file_path, index=False, encoding='utf-8-sig')
                 with open(page_file_path, 'w') as pf:
@@ -280,7 +280,7 @@ if __name__ == "__main__":
                 # 1. 메인 데이터와 병합
                 df_new = pd.DataFrame(daily_data)
 
-                # 기존에 같은 날짜 컬럼이 있으면 삭제 (덮어쓰기 위해)
+                # 동일 날짜 컬럼 덮어쓰기
                 cols_to_drop = [c for c in df_m.columns if target_date in c]
                 if cols_to_drop:
                     df_m.drop(columns=cols_to_drop, inplace=True)
@@ -288,7 +288,7 @@ if __name__ == "__main__":
                 df_m = pd.merge(df_m, df_new, on=['name', 'job', 'world'], how='outer')
                 df_m.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
 
-                # 2. 임시 파일 삭제 및 도장 찍기
+                # 임시 파일 삭제 및 완료 로그 기록
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
                 if os.path.exists(page_file_path):

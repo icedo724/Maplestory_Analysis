@@ -17,6 +17,7 @@ PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "showcase", "preprocessed", "da
 SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "showcase", "sundaylog.txt")
 AGG_DIR         = os.path.join(BASE_DIR, "data", "showcase", "aggregated")
 SHOWCASE_DATE   = "2025-12-13"
+EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "showcase", "eventlog.txt")
 MIN_VALID_DAYS  = 7
 # ==========================================
 
@@ -207,7 +208,7 @@ print(f"     → {len(agg6)}행 저장")
 
 
 # ── 7. 직업별 Pre/Post 요약 ───────────────────────────────────────────────
-print("[7/7] agg_job_summary 생성 중...")
+print("[7/8] agg_job_summary 생성 중...")
 df_job = df[(df['Pre_Valid_Days'] >= MIN_VALID_DAYS) & (df['Post_Valid_Days'] >= MIN_VALID_DAYS)].copy()
 agg7 = (df_job.groupby(['job', 'segment'])
         .agg(n=('name', 'count'), pre_avg=('Pre_Avg', 'mean'), post_avg=('Post_Avg', 'mean'))
@@ -215,6 +216,68 @@ agg7 = (df_job.groupby(['job', 'segment'])
 agg7['growth_rate'] = (agg7['post_avg'] - agg7['pre_avg']) / agg7['pre_avg'] * 100
 agg7.to_csv(os.path.join(AGG_DIR, 'agg_job_summary.csv'), index=False, encoding='utf-8-sig')
 print(f"     → {len(agg7)}행 저장")
+
+
+# ── 8. 이벤트 기간 영향 분석 ──────────────────────────────────────────────
+print("[8/8] agg_event_impact 생성 중...")
+showcase_dt_e = pd.to_datetime(SHOWCASE_DATE)
+post_cols_e   = [c for c in daily_cols
+                 if pd.to_datetime(c.replace('Daily_', '')) - pd.Timedelta(days=1) > showcase_dt_e]
+
+event_defs = []
+if os.path.exists(EVENT_LOG_PATH):
+    with open(EVENT_LOG_PATH, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if '~' in line and ':' in line:
+                date_range, rest = line.split(':', 1)
+                parts = rest.split(':', 1)
+                start_str, end_str = date_range.split('~')
+                event_defs.append({
+                    'start':      pd.to_datetime(start_str.strip()),
+                    'end':        pd.to_datetime(end_str.strip()),
+                    'event_name': parts[0].strip(),
+                    'event_type': parts[1].strip() if len(parts) > 1 else '',
+                })
+
+agg8_rows = []
+for ev in event_defs:
+    # Daily_ 컬럼의 실제 활동일 = 컬럼날짜 - 1일
+    ev_cols  = [c for c in post_cols_e
+                if ev['start'] <= pd.to_datetime(c.replace('Daily_', '')) - pd.Timedelta(days=1) <= ev['end']]
+    non_cols = [c for c in post_cols_e if c not in ev_cols]
+    if not ev_cols or not non_cols:
+        continue
+
+    df_ev = df.copy()
+    ev_valid  = df_ev[ev_cols].notna().sum(axis=1)
+    non_valid = df_ev[non_cols].notna().sum(axis=1)
+    df_ev = df_ev[(ev_valid >= MIN_VALID_DAYS) & (non_valid >= MIN_VALID_DAYS)]
+    df_ev['event_avg']  = df_ev[ev_cols].mean(axis=1)
+    df_ev['non_ev_avg'] = df_ev[non_cols].mean(axis=1)
+
+    for seg in sorted(df_ev['segment'].dropna().unique()):
+        sd = df_ev[df_ev['segment'] == seg].dropna(subset=['event_avg', 'non_ev_avg'])
+        if len(sd) < 5:
+            continue
+        t, p = stats.ttest_rel(sd['non_ev_avg'], sd['event_avg'])
+        agg8_rows.append({
+            'event_name':    ev['event_name'],
+            'event_type':    ev['event_type'],
+            'event_start':   ev['start'].strftime('%Y-%m-%d'),
+            'event_end':     ev['end'].strftime('%Y-%m-%d'),
+            'segment':       seg,
+            'n':             len(sd),
+            'non_event_avg': sd['non_ev_avg'].mean(),
+            'event_avg':     sd['event_avg'].mean(),
+            'growth_rate':   (sd['event_avg'].mean() - sd['non_ev_avg'].mean()) / sd['non_ev_avg'].mean() * 100,
+            't_stat':        t,
+            'p_value':       p,
+        })
+
+agg8 = pd.DataFrame(agg8_rows)
+agg8.to_csv(os.path.join(AGG_DIR, 'agg_event_impact.csv'), index=False, encoding='utf-8-sig')
+print(f"     → {len(agg8)}행 저장")
 
 
 # ── 결과 요약 ─────────────────────────────────────────────────────────────
