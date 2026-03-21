@@ -1,8 +1,6 @@
 .venv/
+.idea/
 __pycache__/
 *.pyc
 config/api.txt
-data/showcase/daily_tracking_lv.csv
-data/showcase/*_backup_*.csv
-data/showcase/temp/
-data/showcase/preprocessed/
+data/

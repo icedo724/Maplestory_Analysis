@@ -13,7 +13,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 base_dir    = os.path.dirname(os.path.dirname(current_dir))
 
 PROCESSED_PATH  = os.path.join(base_dir, "data", "showcase", "preprocessed", "daily_segment_processed.csv")
-SUNDAY_LOG_PATH = os.path.join(base_dir, "data", "sundaylog.txt")
+SUNDAY_LOG_PATH = os.path.join(base_dir, "data", "showcase", "sundaylog.txt")
 SHOWCASE_DATE   = "2025-12-13"
 MIN_VALID_DAYS  = 7   # Pre/Post 평균 신뢰도 최소 기준일
 # ==========================================
@@ -169,10 +169,27 @@ def main():
         st.divider()
         st.subheader("🧪 통계 검증: 쇼케이스 전/후 유의미한 변화가 있었는가?")
 
-        # [수정] MIN_VALID_DAYS 필터 적용 후 t-검정
-        df_stat = df[
-            (df['Pre_Valid_Days']  >= MIN_VALID_DAYS) &
-            (df['Post_Valid_Days'] >= MIN_VALID_DAYS)
+        # 대칭 기간 기준 Pre/Post 평균 재계산 (t-검정용)
+        # Pre/Post 전체 기간이 비대칭(Pre ~35일 vs Post ~87일)이므로
+        # 추세 차트와 동일하게 ±sym_days 대칭 구간으로 맞춰 검정
+        daily_cols_all = sorted(
+            [c for c in df.columns if c.startswith('Daily_')],
+            key=lambda x: pd.to_datetime(x.replace('Daily_', ''))
+        )
+        sym_pre_cols  = [c for c in daily_cols_all
+                         if sym_start < pd.to_datetime(c.replace('Daily_', '')) <= showcase_dt]
+        sym_post_cols = [c for c in daily_cols_all
+                         if showcase_dt < pd.to_datetime(c.replace('Daily_', '')) <= sym_end]
+
+        df_stat = df.copy()
+        df_stat['Sym_Pre_Avg']    = df_stat[sym_pre_cols].mean(axis=1)         if sym_pre_cols  else np.nan
+        df_stat['Sym_Post_Avg']   = df_stat[sym_post_cols].mean(axis=1)        if sym_post_cols else np.nan
+        df_stat['Sym_Pre_Valid']  = df_stat[sym_pre_cols].notna().sum(axis=1)  if sym_pre_cols  else 0
+        df_stat['Sym_Post_Valid'] = df_stat[sym_post_cols].notna().sum(axis=1) if sym_post_cols else 0
+
+        df_stat = df_stat[
+            (df_stat['Sym_Pre_Valid']  >= MIN_VALID_DAYS) &
+            (df_stat['Sym_Post_Valid'] >= MIN_VALID_DAYS)
         ]
         excluded = len(df) - len(df_stat)
         if excluded > 0:
@@ -180,22 +197,23 @@ def main():
 
         c_bar, c_stat = st.columns([2, 1.5])
         with c_bar:
-            summary = df_stat.groupby('segment')[['Pre_Avg', 'Post_Avg']].mean().reset_index()
-            summary['Growth_Rate'] = (summary['Post_Avg'] - summary['Pre_Avg']) / summary['Pre_Avg'] * 100
+            summary = df_stat.groupby('segment')[['Sym_Pre_Avg', 'Sym_Post_Avg']].mean().reset_index()
+            summary['Growth_Rate'] = (summary['Sym_Post_Avg'] - summary['Sym_Pre_Avg']) / summary['Sym_Pre_Avg'] * 100
             fig_bar = px.bar(
                 summary, x='segment', y='Growth_Rate', color='segment',
-                title="구간별 성장 증감률 (%)", text_auto='.1f'
+                title=f"구간별 성장 증감률 (%) — 대칭 ±{sym_days}일 기준", text_auto='.1f'
             )
             fig_bar.update_traces(texttemplate='%{text}%', textposition='outside')
             st.plotly_chart(fig_bar, use_container_width=True)
 
         with c_stat:
             st.markdown("#### 대응표본 t-검정 결과")
+            st.caption(f"대칭 기간 ±{sym_days}일 기준")
             for seg in sorted(df_stat['segment'].dropna().unique()):
-                seg_data = df_stat[df_stat['segment'] == seg].dropna(subset=['Pre_Avg', 'Post_Avg'])
+                seg_data = df_stat[df_stat['segment'] == seg].dropna(subset=['Sym_Pre_Avg', 'Sym_Post_Avg'])
                 if len(seg_data) > 1:
-                    t_stat, p_val = stats.ttest_rel(seg_data['Pre_Avg'], seg_data['Post_Avg'])
-                    is_inc  = seg_data['Post_Avg'].mean() > seg_data['Pre_Avg'].mean()
+                    t_stat, p_val = stats.ttest_rel(seg_data['Sym_Pre_Avg'], seg_data['Sym_Post_Avg'])
+                    is_inc  = seg_data['Sym_Post_Avg'].mean() > seg_data['Sym_Pre_Avg'].mean()
                     dir_icon = "📈 증가" if is_inc else "📉 감소"
                     if p_val < 0.001:
                         sig = "매우 유의미 (⭐⭐⭐)"
@@ -296,6 +314,18 @@ def main():
                 "⚠️ `sundaylog.txt` 파일이 없거나 비어 있습니다. "
                 "선데이 이벤트 분류 없이 일반 일요일로만 분석됩니다."
             )
+        else:
+            # 수집 데이터에 존재하는 일요일 중 sundaylog에 기록 없는 날짜 감지
+            all_sundays_in_data = sorted(melted[melted['DayOfWeek'] == 6]['Date'].dt.normalize().unique())
+            logged_dates = set(sunday_log_df['Date'].dt.normalize())
+            missing_sundays = [d for d in all_sundays_in_data if d not in logged_dates]
+            if missing_sundays:
+                missing_str = ", ".join(pd.Timestamp(d).strftime('%Y-%m-%d') for d in missing_sundays)
+                st.warning(
+                    f"⚠️ sundaylog.txt에 기록되지 않은 선데이가 {len(missing_sundays)}개 있습니다: "
+                    f"**{missing_str}**  \n"
+                    "해당 날짜는 '기타'로 분류됩니다. sundaylog.txt에 이벤트를 추가해주세요."
+                )
 
         # 일요일 데이터 추출 및 이벤트 분류 병합
         df_sunday_only   = melted[melted['DayOfWeek'] == 6].copy()

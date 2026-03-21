@@ -167,6 +167,7 @@ if __name__ == "__main__":
 
         # [이어하기 로직] 임시 파일 확인
         temp_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}.csv")
+        page_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}_page.txt")
         daily_data = []
         start_page = 1
 
@@ -174,14 +175,19 @@ if __name__ == "__main__":
             try:
                 df_temp = pd.read_csv(temp_file_path)
                 daily_data = df_temp.to_dict('records')
-                # 페이지 계산 (보통 1페이지당 200명 기준)
                 collected_count = len(daily_data)
-                start_page = (collected_count // 200) + 1
+                if os.path.exists(page_file_path):
+                    with open(page_file_path, 'r') as pf:
+                        start_page = int(pf.read().strip()) + 1
+                else:
+                    start_page = 1
                 print(f"[복구] {target_date} 데이터 {collected_count}명 발견 -> {start_page}페이지부터 이어하기")
             except Exception as e:
                 print(f"[오류] 임시 파일 손상, 처음부터 시작: {e}")
                 daily_data = []
                 start_page = 1
+                if os.path.exists(page_file_path):
+                    os.remove(page_file_path)
 
         if not key_manager.get_current_key():
             print("[종료] 모든 키 소진됨")
@@ -266,6 +272,8 @@ if __name__ == "__main__":
             # [핵심] 매 페이지마다 임시 파일 저장 (안전장치)
             if daily_data:
                 pd.DataFrame(daily_data).to_csv(temp_file_path, index=False, encoding='utf-8-sig')
+                with open(page_file_path, 'w') as pf:
+                    pf.write(str(page))
 
             page += 1
             time.sleep(REQUEST_INTERVAL)
@@ -287,6 +295,8 @@ if __name__ == "__main__":
                 # 2. 임시 파일 삭제 및 도장 찍기
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
+                if os.path.exists(page_file_path):
+                    os.remove(page_file_path)
 
                 mark_date_completed(target_date)
                 print(f"\n[성공] {target_date} 처리 완료 (총 {len(df_m)}명)")
