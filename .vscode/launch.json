@@ -2,51 +2,51 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "A: 쇼케이스 데이터 수집",
+            "name": "collect: 일별 스냅샷 수집",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/01_showcase/A_get_showcase_impact.py",
+            "program": "${workspaceFolder}/scripts/collect/daily_snapshot.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
         },
         {
-            "name": "B: 전처리",
+            "name": "showcase 1: 전처리",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/01_showcase/B_preprocessing.py",
+            "program": "${workspaceFolder}/scripts/analyze/showcase/1_preprocess.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
         },
         {
-            "name": "C: 집계 파일 생성",
+            "name": "showcase 2: 집계 파일 생성",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/01_showcase/C_export_agg.py",
+            "program": "${workspaceFolder}/scripts/analyze/showcase/2_aggregate.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": { "PYTHONIOENCODING": "utf-8" }
         },
         {
-            "name": "D: 분석 결과 출력",
+            "name": "showcase 3: 분석 결과 출력",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/01_showcase/D_analysis.py",
+            "program": "${workspaceFolder}/scripts/analyze/showcase/3_stats.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": { "PYTHONIOENCODING": "utf-8" }
         },
         {
-            "name": "E: 쇼케이스 대시보드 (Streamlit)",
+            "name": "dashboard: 대시보드 실행 (Streamlit)",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "args": [
                 "run",
-                "${workspaceFolder}/scripts/01_showcase/E_showcase_dashboard.py",
+                "${workspaceFolder}/dashboard/app.py",
                 "--server.headless", "false"
             ],
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
