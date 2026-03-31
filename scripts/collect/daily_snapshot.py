@@ -11,7 +11,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ================= CONFIG =================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SAVE_DIR = os.path.join(BASE_DIR, "data", "showcase")
+SAVE_DIR = os.path.join(BASE_DIR, "data", "raw")
 TEMP_DIR = os.path.join(SAVE_DIR, "temp")  # 임시 저장소
 OUTPUT_FILE = os.path.join(SAVE_DIR, "daily_tracking_lv.csv")
 LOG_FILE = os.path.join(SAVE_DIR, "completed_log.txt")
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     else:
         df_m = pd.DataFrame(columns=['name', 'job', 'world'])
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     all_dates = get_date_range(START_DATE, today)
     target_dates = [d for d in all_dates if d not in completed_dates]
 
