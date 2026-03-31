@@ -1,7 +1,7 @@
 """
 집계 데이터 내보내기 스크립트
 원본 전처리 데이터(152MB)를 Streamlit Cloud 호스팅용 집계 파일(~50KB)로 변환.
-생성 파일 → data/showcase/aggregated/
+생성 파일 → data/processed/showcase/aggregated/
 """
 import pandas as pd
 import numpy as np
@@ -13,16 +13,16 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # ================= CONFIG =================
 BASE_DIR        = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "showcase", "preprocessed", "daily_segment_processed.csv")
-SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "showcase", "sundaylog.txt")
-AGG_DIR         = os.path.join(BASE_DIR, "data", "showcase", "aggregated")
+PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "processed", "showcase", "daily_segment_processed.csv")
+SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "meta", "sundaylog.txt")
+AGG_DIR         = os.path.join(BASE_DIR, "data", "processed", "showcase", "aggregated")
 SHOWCASE_DATE   = "2025-12-13"
-EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "showcase", "eventlog.txt")
+EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "meta", "eventlog.txt")
 MIN_VALID_DAYS  = 7
 # ==========================================
 
 if not os.path.exists(PROCESSED_PATH):
-    print("[오류] 전처리 파일 없음. B_preprocessing.py 먼저 실행하세요.")
+    print("[오류] 전처리 파일 없음. 1_preprocess.py 먼저 실행하세요.")
     sys.exit()
 
 os.makedirs(AGG_DIR, exist_ok=True)
@@ -48,7 +48,7 @@ sym_end     = showcase_dt + pd.Timedelta(days=sym_days)
 
 
 # ── 1. 날짜 × 구간별 일평균 경험치 ────────────────────────────────────────
-print("[1/7] agg_daily_segment 생성 중...")
+print("[1/8] agg_daily_segment 생성 중...")
 agg1 = melted.groupby(['Date', 'segment'])['Exp'].mean().reset_index()
 agg1['Date'] = agg1['Date'].dt.strftime('%Y-%m-%d')
 agg1.columns = ['date', 'segment', 'avg_exp']
@@ -57,7 +57,7 @@ print(f"     → {len(agg1)}행 저장")
 
 
 # ── 2. 구간별 Pre/Post 요약 + t-검정 결과 ─────────────────────────────────
-print("[2/7] agg_segment_summary 생성 중...")
+print("[2/8] agg_segment_summary 생성 중...")
 sym_pre_cols  = [c for c in daily_cols if sym_start < pd.to_datetime(c.replace('Daily_', '')) <= showcase_dt]
 sym_post_cols = [c for c in daily_cols if showcase_dt < pd.to_datetime(c.replace('Daily_', '')) <= sym_end]
 
@@ -90,7 +90,7 @@ print(f"     → {len(agg2)}행 저장")
 
 
 # ── 3. 썬데이 이벤트별 변화율 집계 ───────────────────────────────────────
-print("[3/7] 썬데이 데이터 준비 중...")
+print("[3/8] 썬데이 데이터 준비 중...")
 sunday_rows = []
 if os.path.exists(SUNDAY_LOG_PATH):
     with open(SUNDAY_LOG_PATH, 'r', encoding='utf-8') as f:
@@ -133,7 +133,7 @@ agg3.to_csv(os.path.join(AGG_DIR, 'agg_sunday_events.csv'), index=False, encodin
 print(f"     → {len(agg3)}행 저장")
 
 # 3b. 박스플롯용 분위수 (go.Box precomputed 방식)
-print("[4/7] agg_sunday_box 생성 중...")
+print("[4/8] agg_sunday_box 생성 중...")
 cat_order = ['경타포스', '사냥', '사냥 외']
 box_rows = []
 for scope, subset in [('전체', df_sun_clean)] + [(seg, df_sun_clean[df_sun_clean['segment'] == seg])
@@ -154,7 +154,7 @@ agg4.to_csv(os.path.join(AGG_DIR, 'agg_sunday_box.csv'), index=False, encoding='
 print(f"     → {len(agg4)}행 저장")
 
 # 3c. ANOVA + Tukey HSD
-print("[5/7] agg_anova + agg_tukey 생성 중...")
+print("[5/8] agg_anova + agg_tukey 생성 중...")
 anova_rows = []
 tukey_rows = []
 
@@ -197,7 +197,7 @@ if tukey_rows:
 
 
 # ── 6. 요일 × 주차 × 구간 집계 ───────────────────────────────────────────
-print("[6/7] agg_weekday 생성 중...")
+print("[6/8] agg_weekday 생성 중...")
 day_map = {2: '수', 3: '목', 4: '금', 5: '토', 6: '일', 0: '월', 1: '화'}
 melted['day_name'] = melted['DayOfWeek'].map(day_map)
 agg6 = (melted.groupby(['segment', 'day_name', 'Week_Idx'])['Exp']
