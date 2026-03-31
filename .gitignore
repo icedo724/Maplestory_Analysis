@@ -3,10 +3,12 @@
 __pycache__/
 *.pyc
 config/api.txt
+.claude/
 
 # 대용량/민감 데이터 파일만 개별 제외
-data/showcase/daily_tracking_lv.csv
-data/showcase/*_backup_*.csv
-data/showcase/temp/
-data/showcase/preprocessed/
-data/showcase/completed_log.txt
+data/raw/daily_tracking_lv.csv
+data/raw/*_backup_*.csv
+data/raw/temp/
+data/raw/completed_log.txt
+data/raw/user_detail.csv
+data/processed/showcase/daily_segment_processed.csv
