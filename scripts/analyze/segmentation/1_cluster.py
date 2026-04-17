@@ -67,6 +67,10 @@ if __name__ == "__main__":
     # ── 4. Daily 경험치 계산 ──────────────────────────────────────────────────
     print("[진행] 일일 경험치 계산 중 (레벨업 보정 포함)...")
     daily_dict, daily_cols, _ = compute_daily_exp(df, dates)
+    if not daily_cols:
+        print("[오류] 유효한 Daily 컬럼이 없습니다. "
+              "모든 날짜가 API 미갱신으로 제외됐거나 dates 길이가 1 이하입니다.")
+        sys.exit()
     df = pd.concat([df, pd.DataFrame(daily_dict, index=df.index)], axis=1)
 
     # ── 5. Segment 분류 ───────────────────────────────────────────────────────
