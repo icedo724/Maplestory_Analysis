@@ -123,7 +123,7 @@ def main():
             st.warning(f"생존 분석 데이터가 없습니다.\n\n경로: `{SURVIVAL_FILE}`")
         else:
             st.markdown(
-                "첫 레벨링 이후 **30일 연속 비활성**을 이탈로 정의합니다.  \n"
+                "**7일 연속 비활성**을 이탈로 정의합니다 (Lv.285+ 고레벨 유저 기준).  \n"
                 "Kaplan-Meier 곡선으로 레벨 구간별 · 클러스터별 이탈 시점을 비교합니다."
             )
             total = len(df_surv)
