@@ -4,13 +4,12 @@ import os
 import sys
 
 # ================= CONFIG =================
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SAVE_DIR = os.path.join(BASE_DIR, "data", "showcase")
-PREPROCESSED_DIR = os.path.join(SAVE_DIR, "preprocessed")
+BASE_DIR         = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+PREPROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed", "showcase")
 
-INPUT_FILE = os.path.join(SAVE_DIR, "daily_tracking_lv.csv")
+INPUT_FILE  = os.path.join(BASE_DIR, "data", "raw", "daily_tracking_lv.csv")
 OUTPUT_FILE = os.path.join(PREPROCESSED_DIR, "daily_segment_processed.csv")
-LOG_FILE    = os.path.join(SAVE_DIR, "completed_log.txt")  # 수집 완료 날짜 로그
+LOG_FILE    = os.path.join(BASE_DIR, "data", "raw", "completed_log.txt")  # 수집 완료 날짜 로그
 
 SHOWCASE_DATE = "2025-12-13"
 # ==========================================
