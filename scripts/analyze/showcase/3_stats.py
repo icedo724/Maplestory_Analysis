@@ -7,10 +7,10 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 # ================= CONFIG =================
-BASE_DIR        = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "showcase", "preprocessed", "daily_segment_processed.csv")
-SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "showcase", "sundaylog.txt")
-EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "showcase", "eventlog.txt")
+BASE_DIR        = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "processed", "showcase", "daily_segment_processed.csv")
+SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "meta", "sundaylog.txt")
+EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "meta", "eventlog.txt")
 SHOWCASE_DATE   = "2025-12-13"
 MIN_VALID_DAYS  = 7
 # ==========================================
@@ -40,7 +40,7 @@ section("데이터 로드")
 
 if not os.path.exists(PROCESSED_PATH):
     print(f"[오류] 전처리 파일 없음: {PROCESSED_PATH}")
-    print("       B_preprocessing.py 를 먼저 실행해주세요.")
+    print("       1_preprocess.py 를 먼저 실행해주세요.")
     exit()
 
 df = pd.read_csv(PROCESSED_PATH)
