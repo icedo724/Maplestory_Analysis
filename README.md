@@ -2,7 +2,8 @@
 
 넥슨 오픈API로 수집한 실제 유저 데이터를 바탕으로 경험치 변동 패턴과 유저 행동을 분석합니다.
 
-[대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
+- [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
+- [분석 리포트](https://www.notion.so/miniminimin/32afbcdaed288075a929eb7f533361b0?source=copy_link)
 
 ---
 
