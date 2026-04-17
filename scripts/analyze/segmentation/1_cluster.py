@@ -156,13 +156,22 @@ if __name__ == "__main__":
         daily_dates_dt[int(i)].strftime('%Y-%m-%d') if i >= 0 else pd.NaT
         for i in last_valid_idx
     ])
-    character_age_days = (last_valid_dates - df['date_create'].values).days.astype(float)
+    age_td = last_valid_dates - df['date_create'].values
+    character_age_days = age_td.days.astype(float)
 
-    # 음수 나이 방어 (date_create 데이터 오류로 인한 역전 방지)
+    # NaT(date_create/last_valid 누락) → .days 는 iNaT(거대 음수) 반환 → 명시 NaN 처리
+    #   NaN 으로 두면 이후 feat_df.dropna() 단계에서 자연스럽게 클러스터링 대상에서 제외된다.
+    nat_mask = df['date_create'].isna().to_numpy() | pd.isna(last_valid_dates).to_numpy()
+    if nat_mask.any():
+        print(f"   [경고] date_create/last_valid 누락 {int(nat_mask.sum())}건 → NaN 처리 (dropna 대상)")
+        character_age_days = np.where(nat_mask, np.nan, character_age_days)
+
+    # 음수 나이 방어 (date_create 데이터 오류로 인한 역전 방지, 매우 드묾)
+    # ※ NaN 은 (< 0) 비교에서 False 로 빠지므로 위 nat_mask 처리와 충돌하지 않음
     neg_age_count = int((character_age_days < 0).sum())
     if neg_age_count > 0:
         print(f"   [경고] character_age_days 음수 {neg_age_count}건 → 0 으로 보정 (date_create 오류)")
-        character_age_days = np.maximum(character_age_days, 0)
+        character_age_days = np.where(character_age_days < 0, 0, character_age_days)
 
     # avg_exp_pct : 세그먼트 내 퍼센타일 (0~100)
     # 세그먼트별 기저 활동량 차이를 제거하고 "상대적 열정도"를 측정

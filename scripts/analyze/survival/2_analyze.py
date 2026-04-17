@@ -103,6 +103,10 @@ if __name__ == "__main__":
 
     df = pd.read_csv(INPUT_FILE)
     df = df[df['event_flag'].notna() & df['duration_days'].notna()].copy()
+    if len(df) == 0:
+        print("[오류] 유효한 event_flag / duration_days 데이터가 없습니다. "
+              "survival/1_preprocess.py 출력을 확인하세요.")
+        sys.exit()
     df['event_flag']    = df['event_flag'].astype(int)
     df['duration_days'] = df['duration_days'].astype(float)
 

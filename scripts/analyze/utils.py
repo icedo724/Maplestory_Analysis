@@ -93,6 +93,9 @@ def compute_daily_exp(df, dates):
     ---------
     API 미갱신  : 95 %+ 값 동일 → 해당 일 제외 (daily_cols 에 미포함)
     레벨업 보정 : diff < 0 이고 레벨 상승 → (req_exp − prev_exp + curr_exp)
+                   ※ 단일 레벨 상승(prev_lv → prev_lv+1) 가정.
+                     하루에 2레벨 이상 오른 경우 중간 레벨 요구량이 누락되어
+                     증가분이 소폭 과소 추정됨. Lv.285+ 에서는 극히 드묾.
     잔여 음수   : 타이밍 오차로 보고 0 처리
     NaN 유지    : 관측 전 기간(신규 진입 이전)은 NaN 그대로
 

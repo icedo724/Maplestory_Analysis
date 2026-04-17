@@ -76,8 +76,11 @@ def preprocess_for_analysis():
 
     # ── 5. 쇼케이스 전후 평균 계산 ────────────────────────────────────────────
     print("[진행] 쇼케이스 전후 평균 계산 중...")
-    # Daily_YYYY-MM-DD = (YYYY-MM-(DD-1)) → YYYY-MM-DD 증분
-    # Daily_2025-12-13 = 12일→13일 증분 = 쇼케이스 당일 활동 → Pre 에 포함
+    # Daily_YYYY-MM-DD 컬럼 = (DD-1)일 수집값 → DD일 수집값 증분.
+    # 넥슨 API 는 새벽 갱신(전날 24시까지 누적)이므로
+    # Daily_2025-12-13 이 담는 활동은 실제로 **12/12(쇼케이스 전날) 활동**.
+    # 필터는 Daily_컬럼명(수집일) 기준이므로 쇼케이스 당일(12/13) 활동은
+    # Daily_2025-12-14 에 담기고 Post 로 분류된다.
     showcase_dt = pd.to_datetime(SHOWCASE_DATE)
     pre_cols  = [c for c in daily_cols if pd.to_datetime(c.replace('Daily_', '')) <= showcase_dt]
     post_cols = [c for c in daily_cols if pd.to_datetime(c.replace('Daily_', '')) >  showcase_dt]

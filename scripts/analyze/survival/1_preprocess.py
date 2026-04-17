@@ -182,7 +182,13 @@ if __name__ == "__main__":
         daily_dates_dt[int(i)].strftime('%Y-%m-%d') if i >= 0 else pd.NaT
         for i in last_valid_idx
     ])
-    character_age_days = (last_valid_dates - df['date_create'].values).days
+    age_td = last_valid_dates - df['date_create'].values
+    character_age_days = age_td.days.astype(float)
+    # date_create / last_valid 누락(NaT) → .days 는 iNaT(거대 음수) 반환 → 명시 NaN 처리
+    nat_mask = df['date_create'].isna().to_numpy() | pd.isna(last_valid_dates).to_numpy()
+    if nat_mask.any():
+        print(f"   [경고] date_create/last_valid 누락 {int(nat_mask.sum())}건 → NaN 처리")
+        character_age_days = np.where(nat_mask, np.nan, character_age_days)
 
     first_active_date = [
         daily_dates_dt[int(i)].strftime('%Y-%m-%d') if i >= 0 else None
