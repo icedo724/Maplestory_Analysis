@@ -8,11 +8,6 @@ config/api.txt
 # 원본 데이터 (대용량)
 data/raw/
 
-# 중간 산출물
-data/processed/showcase/daily_segment_processed.csv
-data/processed/survival/survival_data.csv
-data/processed/segmentation/clustered_users.csv
-
 # 로그
 *.log
 *.txt
