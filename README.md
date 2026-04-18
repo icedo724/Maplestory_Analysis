@@ -5,7 +5,7 @@
 
 ## I. 경험치 분석 (`exp_analysis/`)
 
-- [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
+- [대시보드 바로가기](https://maple-exp.streamlit.app/)
 - [분석 리포트](https://www.notion.so/miniminimin/32afbcdaed288075a929eb7f533361b0?source=copy_link)
 
 쇼케이스·이벤트·요일 등 외부 요인이 고레벨 유저(Lv.285~299)의 사냥 동기에 미치는 영향을 검증합니다.
