@@ -151,6 +151,14 @@ if __name__ == "__main__":
         np.nan,
     )
 
+    # Lv.300 도달 유저는 경험치가 오르지 않는 구조적 특성 → 이탈로 판정하지 않고 관측중단 처리
+    last_lv_col = lv_cols[-1]
+    lv_at_end   = df[last_lv_col].values
+    lv300_mask  = (lv_at_end == 300)
+    if lv300_mask.sum() > 0:
+        print(f"   [정보] 관측 기간 중 Lv.300 도달 {int(lv300_mask.sum())}건 → 관측중단(event=0) 처리")
+        event_flag = np.where(lv300_mask, 0, event_flag)
+
     # duration: 이탈 → first_active ~ last_active / 관측중단 → first_active ~ last_valid
     duration_days = np.where(
         has_any_active & has_any_valid,
@@ -186,7 +194,7 @@ if __name__ == "__main__":
     age_td = last_valid_dates - df['date_create'].values
     character_age_days = age_td.days.astype(float)
     # date_create / last_valid 누락(NaT) → .days 는 iNaT(거대 음수) 반환 → 명시 NaN 처리
-    nat_mask = df['date_create'].isna().to_numpy() | pd.isna(last_valid_dates).to_numpy()
+    nat_mask = df['date_create'].isna().to_numpy() | np.array(pd.isna(last_valid_dates))
     if nat_mask.any():
         print(f"   [경고] date_create/last_valid 누락 {int(nat_mask.sum())}건 → NaN 처리")
         character_age_days = np.where(nat_mask, np.nan, character_age_days)

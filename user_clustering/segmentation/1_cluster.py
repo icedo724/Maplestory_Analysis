@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     # NaT(date_create/last_valid 누락) → .days 는 iNaT(거대 음수) 반환 → 명시 NaN 처리
     #   NaN 으로 두면 이후 feat_df.dropna() 단계에서 자연스럽게 클러스터링 대상에서 제외된다.
-    nat_mask = df['date_create'].isna().to_numpy() | pd.isna(last_valid_dates).to_numpy()
+    nat_mask = df['date_create'].isna().to_numpy() | np.array(pd.isna(last_valid_dates))
     if nat_mask.any():
         print(f"   [경고] date_create/last_valid 누락 {int(nat_mask.sum())}건 → NaN 처리 (dropna 대상)")
         character_age_days = np.where(nat_mask, np.nan, character_age_days)

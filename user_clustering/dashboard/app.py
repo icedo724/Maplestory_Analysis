@@ -91,15 +91,23 @@ def make_km_figure(df_surv, group_col, title, colors=None):
 # ── 클러스터 레이블 ───────────────────────────────────────────────────────────
 
 def label_cluster(df_cl):
-    """active_day_ratio + avg_exp_pct 기준 간단 레이블링."""
-    def _label(row):
-        r, p = row['active_day_ratio'], row['avg_exp_pct']
-        if r >= 0.6 and p >= 60:  return '고활동·고효율'
-        if r >= 0.6 and p <  60:  return '고활동·저효율'
-        if r <  0.6 and p >= 60:  return '저활동·고효율'
-        return '저활동·저효율'
+    """클러스터 중앙값 기준으로 (플레이시간)_(플레이수준) 레이블 부여.
+    플레이시간: character_age_days 중앙값 — 올드(>1500) / 미드(>600) / 뉴(>350) / 신규
+    플레이수준: active_day_ratio 중앙값  — 헤비(>0.5) / 라이트
+    """
+    medians = df_cl.groupby('cluster')[['character_age_days', 'active_day_ratio']].median()
+
+    def _label(age, r):
+        prefix = '올드' if age > 1500 else ('미드' if age > 600 else ('뉴' if age > 350 else '신규'))
+        suffix = '헤비' if r > 0.5 else '라이트'
+        return f'{prefix}_{suffix}'
+
+    cluster_labels = {
+        c: _label(row['character_age_days'], row['active_day_ratio'])
+        for c, row in medians.iterrows()
+    }
     df_cl = df_cl.copy()
-    df_cl['cluster_label'] = df_cl.apply(_label, axis=1)
+    df_cl['cluster_label'] = df_cl['cluster'].map(cluster_labels)
     return df_cl
 
 
