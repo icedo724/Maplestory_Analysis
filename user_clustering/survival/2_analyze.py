@@ -29,7 +29,7 @@ except ImportError:
     print("       pip install lifelines 후 재실행하세요.\n")
 
 # ================= CONFIG =================
-BASE_DIR     = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+BASE_DIR     = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INPUT_FILE   = os.path.join(BASE_DIR, "data", "processed", "survival", "survival_data.csv")
 CLUSTER_FILE = os.path.join(BASE_DIR, "data", "processed", "segmentation", "clustered_users.csv")
 # ==========================================

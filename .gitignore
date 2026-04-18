@@ -18,5 +18,6 @@ data/processed/segmentation/clustered_users.csv
 *.txt
 !requirements.txt
 
-# 리포트 (초안 문서)
-reports/
+# 리포트 (초안 문서) — 프로젝트별 분리
+exp_analysis/reports/
+user_clustering/reports/

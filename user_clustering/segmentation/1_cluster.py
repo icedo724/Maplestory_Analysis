@@ -8,12 +8,13 @@ from sklearn.metrics import silhouette_score
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 
-# scripts/analyze/ 를 경로에 추가하여 utils 임포트
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# ================= CONFIG =================
+BASE_DIR      = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# scripts/ 를 경로에 추가하여 utils 임포트
+sys.path.insert(0, os.path.join(BASE_DIR, "scripts"))
 from utils import get_segment, filter_completed_dates, compute_daily_exp
 
-# ================= CONFIG =================
-BASE_DIR      = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 OUT_DIR       = os.path.join(BASE_DIR, "data", "processed", "segmentation")
 
 TRACKING_FILE   = os.path.join(BASE_DIR, "data", "raw", "daily_tracking_lv.csv")

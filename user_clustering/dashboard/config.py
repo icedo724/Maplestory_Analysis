@@ -1,14 +1,12 @@
 import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR    = os.path.dirname(current_dir)
+# user_clustering/dashboard/config.py → BASE_DIR = maple/
+BASE_DIR    = os.path.dirname(os.path.dirname(current_dir))
 
-AGG_DIR          = os.path.join(BASE_DIR, "data", "processed", "showcase", "aggregated")
 SURVIVAL_FILE    = os.path.join(BASE_DIR, "data", "processed", "survival", "survival_data.csv")
 CLUSTER_FILE     = os.path.join(BASE_DIR, "data", "processed", "segmentation", "clustered_users.csv")
 USER_DETAIL_FILE = os.path.join(BASE_DIR, "data", "raw", "user_detail.csv")
-
-SHOWCASE_DATE = "2025-12-13"
 
 DETAIL_COLS = frozenset([
     'name', 'world', 'tier', 'world_group', 'latest_level',

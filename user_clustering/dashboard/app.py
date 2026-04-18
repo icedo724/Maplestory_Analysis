@@ -133,26 +133,31 @@ def main():
             c_grp = st.radio("그룹 기준:", ["레벨 구간 (segment)", "클러스터 (cluster)"],
                               horizontal=True)
 
+            fig = None
             if c_grp == "레벨 구간 (segment)":
                 df_plot = df_surv[df_surv['segment'].isin(SEGMENT_ORDER)].copy()
                 fig, med_df = make_km_figure(df_plot, 'segment', 'Kaplan-Meier: 레벨 구간별 이탈 곡선')
             else:
                 if 'cluster' not in df_surv.columns:
                     st.info("생존 데이터에 cluster 컬럼이 없습니다.")
-                    return
-                fig, med_df = make_km_figure(df_surv.dropna(subset=['cluster']),
-                                             'cluster', 'Kaplan-Meier: 클러스터별 이탈 곡선',
-                                             colors=CLUSTER_COLORS)
+                else:
+                    fig, med_df = make_km_figure(df_surv.dropna(subset=['cluster']),
+                                                 'cluster', 'Kaplan-Meier: 클러스터별 이탈 곡선',
+                                                 colors=CLUSTER_COLORS)
 
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.subheader("중앙 이탈 시점 (Median Survival)")
-            st.dataframe(med_df.set_index('그룹'), use_container_width=True)
+            if fig is not None:
+                st.plotly_chart(fig, use_container_width=True)
+                st.subheader("중앙 이탈 시점 (Median Survival)")
+                st.dataframe(med_df.set_index('그룹'), use_container_width=True)
 
             st.divider()
             st.subheader("이탈/잔류 비율 (레벨 구간별)")
-            seg_cnt = df_surv.groupby(['segment', 'event']).size().unstack(fill_value=0)
-            seg_cnt.columns = ['잔류', '이탈'] if 0 in seg_cnt.columns else seg_cnt.columns
+            seg_cnt = (
+                df_surv.groupby(['segment', 'event']).size()
+                .unstack(fill_value=0)
+                .rename(columns={0: '잔류', 1: '이탈'})
+                .reindex(columns=['잔류', '이탈'], fill_value=0)
+            )
             seg_pct = seg_cnt.div(seg_cnt.sum(axis=1), axis=0) * 100
             fig_bar = px.bar(seg_pct.reset_index(), x='segment', y=['잔류', '이탈'],
                              title='레벨 구간별 이탈/잔류 비율',

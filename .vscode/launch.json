@@ -20,62 +20,82 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "showcase 1: 전처리",
+            "name": "exp_analysis 1: 전처리",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/analyze/showcase/1_preprocess.py",
+            "program": "${workspaceFolder}/exp_analysis/1_preprocess.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
         },
         {
-            "name": "showcase 2: 집계 파일 생성",
+            "name": "exp_analysis 2: 집계 파일 생성",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/analyze/showcase/2_aggregate.py",
+            "program": "${workspaceFolder}/exp_analysis/2_aggregate.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": { "PYTHONIOENCODING": "utf-8" }
         },
         {
-            "name": "showcase 3: 분석 결과 출력",
+            "name": "exp_analysis 3: 분석 결과 출력",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/analyze/showcase/3_stats.py",
+            "program": "${workspaceFolder}/exp_analysis/3_stats.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": { "PYTHONIOENCODING": "utf-8" }
         },
         {
-            "name": "survival 1: 생존 분석 전처리",
+            "name": "user_clustering segmentation 1: 클러스터링",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/analyze/survival/1_preprocess.py",
+            "program": "${workspaceFolder}/user_clustering/segmentation/1_cluster.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": { "PYTHONIOENCODING": "utf-8" }
         },
         {
-            "name": "segmentation 1: 클러스터링",
+            "name": "user_clustering segmentation 2: 클러스터 프로파일",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/analyze/segmentation/1_cluster.py",
+            "program": "${workspaceFolder}/user_clustering/segmentation/2_profile.py",
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": { "PYTHONIOENCODING": "utf-8" }
         },
         {
-            "name": "dashboard: 쇼케이스 분석 (Streamlit)",
+            "name": "user_clustering survival 1: 생존 분석 전처리",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/user_clustering/survival/1_preprocess.py",
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": { "PYTHONIOENCODING": "utf-8" }
+        },
+        {
+            "name": "user_clustering survival 2: 생존 분석",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/user_clustering/survival/2_analyze.py",
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "env": { "PYTHONIOENCODING": "utf-8" }
+        },
+        {
+            "name": "dashboard: 경험치 분석 (Streamlit)",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "args": [
                 "run",
-                "${workspaceFolder}/dashboard/app.py",
+                "${workspaceFolder}/exp_analysis/dashboard/app.py",
                 "--server.headless", "false"
             ],
             "python": "${workspaceFolder}/.venv/Scripts/python.exe",
@@ -83,13 +103,13 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "dashboard: 유저 분석 (Streamlit)",
+            "name": "dashboard: 유저 클러스터링 (Streamlit)",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "args": [
                 "run",
-                "${workspaceFolder}/dashboard/analysis.py",
+                "${workspaceFolder}/user_clustering/dashboard/app.py",
                 "--server.headless", "false",
                 "--server.port", "8502"
             ],

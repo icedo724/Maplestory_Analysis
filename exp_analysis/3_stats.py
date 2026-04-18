@@ -7,7 +7,7 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 # ================= CONFIG =================
-BASE_DIR        = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+BASE_DIR        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROCESSED_PATH  = os.path.join(BASE_DIR, "data", "processed", "showcase", "daily_segment_processed.csv")
 SUNDAY_LOG_PATH = os.path.join(BASE_DIR, "data", "meta", "sundaylog.txt")
 EVENT_LOG_PATH  = os.path.join(BASE_DIR, "data", "meta", "eventlog.txt")
