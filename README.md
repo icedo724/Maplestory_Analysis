@@ -3,10 +3,6 @@
 넥슨 오픈API로 수집한 실제 유저 데이터를 바탕으로 경험치 변동 패턴과 유저 행동을 분석합니다.
 동일한 수집 데이터를 공유하지만 분석 방향이 다른 **독립된 두 프로젝트**로 구성되어 있습니다.
 
-- [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
-- [분석 리포트](https://www.notion.so/miniminimin/32afbcdaed288075a929eb7f533361b0?source=copy_link)
-
-
 ## I. 경험치 분석 (`exp_analysis/`)
 
 - [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
@@ -41,6 +37,10 @@
 ---
 
 ## II. 유저 클러스터링 (`user_clustering/`)
+
+- [대시보드 바로가기](https://maple-user-clustering.streamlit.app/)
+- [분석 리포트](https://www.notion.so/miniminimin/346fbcdaed2880209e39ff1b490e34e5?source=copy_link)
+
 
 활동 패턴·성장 효율·캐릭터 연령 등 행동 지표를 기반으로 유저를 군집화하고, 이탈 패턴과 스펙 분포를 분석합니다.
 
