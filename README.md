@@ -3,43 +3,21 @@
 넥슨 오픈API로 수집한 실제 유저 데이터를 바탕으로 경험치 변동 패턴과 유저 행동을 분석합니다.
 동일한 수집 데이터를 공유하지만 분석 방향이 다른 **독립된 두 프로젝트**로 구성되어 있습니다.
 
-- [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/) *(현재 경험치 분석 대시보드만 배포. 유저 클러스터링 대시보드는 `user_clustering/dashboard/app.py` 로컬 실행)*
+- [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
 - [분석 리포트](https://www.notion.so/miniminimin/32afbcdaed288075a929eb7f533361b0?source=copy_link)
 
-### 디렉토리 구조
-
-```
-maple/
-├── scripts/                 # 공통: 데이터 수집·공유 유틸
-│   ├── collect/             # 넥슨 API 수집 스크립트
-│   └── utils.py             # 공통 전처리 함수 (양쪽 프로젝트 공유)
-├── exp_analysis/            # 프로젝트 1: 경험치 분석
-│   ├── 1_preprocess.py
-│   ├── 2_aggregate.py
-│   ├── 3_stats.py
-│   ├── dashboard/           # 경험치 분석 전용 대시보드
-│   └── reports/             # 경험치 분석 전용 리포트 (gitignored)
-├── user_clustering/         # 프로젝트 2: 유저 클러스터링
-│   ├── segmentation/        # 클러스터링 파이프라인
-│   ├── survival/            # 생존 분석 파이프라인
-│   ├── dashboard/           # 클러스터링 전용 대시보드
-│   └── reports/             # 클러스터링 전용 리포트 (gitignored)
-└── data/                    # 원본·가공 데이터 (공유)
-```
-
-- 두 프로젝트는 대시보드·리포트가 완전히 분리되며, 본 `README.md` 만 공유합니다.
-- 공통 수집 파이프라인(`scripts/collect/`)과 전처리 유틸(`scripts/utils.py`)만 공유합니다.
-
----
 
 ## I. 경험치 분석 (`exp_analysis/`)
+
+- [대시보드 바로가기](https://maple-exp-analysis.streamlit.app/)
+- [분석 리포트](https://www.notion.so/miniminimin/32afbcdaed288075a929eb7f533361b0?source=copy_link)
 
 쇼케이스·이벤트·요일 등 외부 요인이 고레벨 유저(Lv.285~299)의 사냥 동기에 미치는 영향을 검증합니다.
 
 ### 1. 쇼케이스 영향 분석
 
 - 쇼케이스 기준일(2025.12.13) ±35일 완전 대칭 구간으로 Pre/Post 비교
-- 레벨 구간별(Lv.285~289 / 290~294 / 295~299) 일평균 경험치 변화율 제공
+- 레벨 구간별(Lv.285-289 / 290-294 / 295-299) 일평균 경험치 변화율 제공
 - 대응표본 t-검정으로 구간별 유의성 검증
 
 ### 2. 주간 패턴 분석
