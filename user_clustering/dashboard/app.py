@@ -250,60 +250,41 @@ def main():
     # ── TAB 3: 스펙 분포 분석 ────────────────────────────────────────────────
     with tab3:
         df_stat = load_user_stat()
-        if df_stat is None:
-            st.warning("유저 스펙 데이터가 없습니다.")
+        STAT_COL = '최대 스탯공격력'
+        if df_stat is None or STAT_COL not in df_stat.columns:
+            st.warning(f"유저 스펙 데이터 또는 '{STAT_COL}' 컬럼이 없습니다.")
         else:
-            st.markdown("유저 스펙 데이터 기반으로 레벨 구간 · 클러스터별 능력치 분포를 분석합니다.")
+            st.markdown(f"**{STAT_COL}** 기준으로 레벨 구간 · 월드 그룹별 스펙 분포를 비교합니다.")
 
             group_by = st.radio("그룹 기준:", ["레벨 구간 (tier)", "월드 그룹 (world_group)"],
                                  horizontal=True, key='stat_group_by')
             group_col = 'tier' if '(tier)' in group_by else 'world_group'
 
-            stat_group = st.selectbox("스탯 그룹 선택:", list(STAT_GROUPS.keys()))
-            stat_cols  = [c for c in STAT_GROUPS[stat_group] if c in df_stat.columns]
+            sub = df_stat[[group_col, STAT_COL]].dropna()
 
-            if not stat_cols:
-                st.info(f"'{stat_group}' 그룹에 해당하는 스탯 컬럼이 데이터에 없습니다.")
-            else:
-                sel_stat = st.selectbox("스탯 선택:", stat_cols)
-                sub = df_stat[[group_col, sel_stat]].dropna()
+            col_v, col_m = st.columns([3, 2])
+            with col_v:
+                fig_vio = px.violin(sub, x=group_col, y=STAT_COL, box=True, points=False,
+                                    color=group_col,
+                                    title=f"{STAT_COL} — {group_col}별 분포",
+                                    labels={group_col: group_col, STAT_COL: STAT_COL})
+                st.plotly_chart(fig_vio, use_container_width=True)
 
-                if sub.empty:
-                    st.info("표시할 데이터가 없습니다.")
-                else:
-                    col_v, col_m = st.columns([3, 2])
+            with col_m:
+                st.subheader("그룹별 통계 요약")
+                desc = sub.groupby(group_col)[STAT_COL].describe()[['count', 'mean', '50%', 'std']]
+                desc.columns = ['유저 수', '평균', '중앙값', '표준편차']
+                st.dataframe(desc.round(0), use_container_width=True)
 
-                    with col_v:
-                        fig_vio = px.violin(sub, x=group_col, y=sel_stat, box=True, points=False,
-                                            title=f"{sel_stat} — {group_col}별 분포",
-                                            labels={group_col: group_col, sel_stat: sel_stat},
-                                            color=group_col)
-                        st.plotly_chart(fig_vio, use_container_width=True)
-
-                    with col_m:
-                        st.subheader("그룹별 통계 요약")
-                        desc = sub.groupby(group_col)[sel_stat].describe()[['count', 'mean', '50%', 'std']]
-                        desc.columns = ['유저 수', '평균', '중앙값', '표준편차']
-                        st.dataframe(desc.round(2), use_container_width=True)
-
-                st.divider()
-                st.subheader("전투력 중앙값 히트맵 (tier × world_group)")
-                power_col = '전투력'
-                if power_col in df_stat.columns and 'tier' in df_stat.columns and 'world_group' in df_stat.columns:
-                    pivot_hp = df_stat.pivot_table(
-                        values=power_col, index='tier', columns='world_group',
-                        aggfunc='median'
-                    )
-                    if not pivot_hp.empty:
-                        fig_hp = px.imshow(pivot_hp, text_auto='.3s',
-                                           color_continuous_scale='Blues',
-                                           title='tier × world_group 전투력 중앙값',
-                                           labels={'color': '중앙값', 'x': 'world_group', 'y': 'tier'})
-                        st.plotly_chart(fig_hp, use_container_width=True)
-                    else:
-                        st.info("전투력 히트맵 데이터가 부족합니다.")
-                else:
-                    st.info("전투력 컬럼 또는 tier/world_group 컬럼이 없습니다.")
+            st.divider()
+            st.subheader(f"{STAT_COL} 중앙값 히트맵 (tier × world_group)")
+            if 'tier' in df_stat.columns and 'world_group' in df_stat.columns:
+                pivot = df_stat.pivot_table(values=STAT_COL, index='tier',
+                                            columns='world_group', aggfunc='median')
+                fig_hp = px.imshow(pivot, text_auto='.3s', color_continuous_scale='Blues',
+                                   title=f"tier × world_group  {STAT_COL} 중앙값",
+                                   labels={'color': '중앙값', 'x': 'world_group', 'y': 'tier'})
+                st.plotly_chart(fig_hp, use_container_width=True)
 
 
 if __name__ == "__main__":

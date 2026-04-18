@@ -23,7 +23,8 @@ LOG_FILE        = os.path.join(BASE_DIR, "data", "raw", "completed_log.txt")
 OUTPUT_FILE     = os.path.join(OUT_DIR, "clustered_users.csv")
 
 SHOWCASE_DATE = "2025-12-13"
-K_RANGE       = range(2, 8)   # k=2..7 탐색 (원래 3~5 에서 확장)
+K_RANGE       = range(2, 8)   # k=2..7 탐색
+FORCE_K       = 3            # None 이면 실루엣 자동 선택, 정수 지정 시 해당 k 강제 사용
 RANDOM_SEED   = 42
 # ==========================================
 
@@ -43,8 +44,9 @@ if __name__ == "__main__":
     # ── 2. Inner join ──────────────────────────────────────────────────────────
     # access_flag, tier 는 피처로 직접 사용하지 않지만 출력 파일에 보존해 둔다.
     # 후속 분석(생존·스펙 분포)에서 서브그룹 필터로 활용 가능.
-    detail_cols = ['name', 'world_group', 'tier', 'union_level', 'date_create', 'access_flag']
-    df = tracking.merge(user_detail[detail_cols], on='name', how='inner')
+    detail_cols = ['name', 'world_group', 'tier', 'union_level', 'date_create', 'access_flag', '최대 스탯공격력']
+    avail_cols  = [c for c in detail_cols if c in user_detail.columns]
+    df = tracking.merge(user_detail[avail_cols], on='name', how='inner')
     print(f"[정보] tracking: {len(tracking):,}명 / user_detail: {len(user_detail):,}명 "
           f"→ inner join: {len(df):,}명")
 
@@ -186,10 +188,16 @@ if __name__ == "__main__":
     df['_character_age_days'] = character_age_days
 
     # ── 9. Feature 행렬 구성 ──────────────────────────────────────────────────
-    FEATURE_COLS = ['_active_day_ratio', '_avg_exp_pct', 'union_level', '_character_age_days']
+    # 최대 스탯공격력: 세그먼트 내 퍼센타일로 변환 (레벨 구간 간 기저 차이 제거)
+    df['_stat_atk_pct'] = np.nan
+    for seg, grp in df.groupby('segment'):
+        ranks = grp['최대 스탯공격력'].rank(pct=True, na_option='keep') * 100
+        df.loc[grp.index, '_stat_atk_pct'] = ranks
+
+    FEATURE_COLS = ['_active_day_ratio', '_avg_exp_pct', 'union_level', '_character_age_days', '_stat_atk_pct']
 
     feat_df = df[FEATURE_COLS].copy()
-    feat_df.columns = ['active_day_ratio', 'avg_exp_pct', 'union_level', 'character_age_days']
+    feat_df.columns = ['active_day_ratio', 'avg_exp_pct', 'union_level', 'character_age_days', 'stat_atk_pct']
 
     # NaN 드롭 전 컬럼별 결측 현황 리포트
     before     = len(feat_df)
@@ -237,8 +245,12 @@ if __name__ == "__main__":
         })
         print(f"   {k:>3} │ {km_sil:>11.4f} │ {km.inertia_:>16,.0f} │ {gmm_sil:>9.4f} │ {gmm_bic:>13,.0f}")
 
-    # 최고 실루엣 (모델 × k) 조합 선택
-    best = max(results, key=lambda r: max(r['km_sil'], r['gmm_sil']))
+    # 최고 실루엣 (모델 × k) 조합 선택 — FORCE_K 지정 시 해당 k 강제 사용
+    if FORCE_K is not None:
+        best = next(r for r in results if r['k'] == FORCE_K)
+        print(f"\n   → FORCE_K={FORCE_K} 강제 지정")
+    else:
+        best = max(results, key=lambda r: max(r['km_sil'], r['gmm_sil']))
     if best['km_sil'] >= best['gmm_sil']:
         best_k, best_model = best['k'], 'KMeans'
         labels, best_sil   = best['km_lbl'], best['km_sil']
@@ -263,6 +275,8 @@ if __name__ == "__main__":
     result['avg_exp_pct']        = feat_df['avg_exp_pct'].round(2).values
     result['avg_exp_on_active']  = df.loc[feat_df.index, '_avg_exp'].values
     result['character_age_days'] = feat_df['character_age_days'].values
+    result['stat_atk_pct']       = feat_df['stat_atk_pct'].round(2).values
+    result['stat_atk_raw']       = df.loc[feat_df.index, '최대 스탯공격력'].values
     result['cluster']            = feat_df['cluster'].values
     result['pre_avg']            = df.loc[feat_df.index, 'pre_avg'].values
     result['post_avg']           = df.loc[feat_df.index, 'post_avg'].values
