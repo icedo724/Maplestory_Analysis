@@ -226,9 +226,9 @@ if __name__ == "__main__":
     result['pre_avg']                = df['pre_avg'].values
     result['post_avg']               = df['post_avg'].values
 
-    # 활성 기록이 아예 없는 유저 제거 (event_flag = NaN)
+    # 활성 기록이 아예 없는 유저, 또는 duration 계산 불가 유저 제거
     before = len(result)
-    result = result[result['event_flag'].notna()].reset_index(drop=True)
+    result = result[result['event_flag'].notna() & result['duration_days'].notna()].reset_index(drop=True)
     if before > len(result):
         print(f"   [정보] 활성 기록 없는 유저 {before - len(result)}명 추가 제거")
 

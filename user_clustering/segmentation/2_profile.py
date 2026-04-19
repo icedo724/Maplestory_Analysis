@@ -23,7 +23,7 @@ SEP  = "=" * 72
 SEP2 = "-" * 72
 
 FEAT_COLS = ['active_day_ratio', 'avg_exp_pct', 'union_level',
-             'character_age_days', 'avg_exp_on_active']
+             'character_age_days', 'avg_exp_on_active', 'stat_atk_pct']
 
 
 def section(title):

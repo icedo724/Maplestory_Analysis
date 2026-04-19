@@ -181,10 +181,10 @@ def main():
         else:
             df_cl = label_cluster(df_cl)
 
-            st.markdown("K-Means 클러스터링 결과 (k=4, 실루엣 0.3193)를 기반으로 유저 그룹을 분석합니다.")
+            st.markdown("K-Means 클러스터링 결과 (k=3, 실루엣 0.2307)를 기반으로 유저 그룹을 분석합니다.")
 
             # 클러스터 요약
-            profile_cols = ['active_day_ratio', 'avg_exp_pct', 'union_level', 'character_age_days']
+            profile_cols = ['active_day_ratio', 'avg_exp_pct', 'union_level', 'character_age_days', 'stat_atk_pct']
             existing_cols = [c for c in profile_cols if c in df_cl.columns]
             profile = df_cl.groupby('cluster')[existing_cols].agg(['mean', 'median', 'count'])
             profile.columns = ['_'.join(c) for c in profile.columns]
@@ -204,6 +204,8 @@ def main():
                     'active_day_ratio_median': '활동 일수 비율',
                     'avg_exp_pct_median': '평균 경험치 퍼센타일',
                     'union_level_median': '유니온 레벨',
+                    'character_age_days_median': '캐릭터 연령 (일)',
+                    'stat_atk_pct_median': '스탯공격력 퍼센타일',
                 }
                 show_df = profile[[c for c in show_cols if c in profile.columns]].copy()
                 show_df.columns = [show_cols[c] for c in show_df.columns]

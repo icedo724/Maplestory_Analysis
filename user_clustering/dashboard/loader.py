@@ -8,12 +8,15 @@ from config import SURVIVAL_FILE, CLUSTER_FILE, USER_DETAIL_FILE, DETAIL_COLS
 def load_survival():
     if not os.path.exists(SURVIVAL_FILE):
         return None
-    df = pd.read_csv(SURVIVAL_FILE)
-    # survival/1_preprocess.py 에서 저장한 컬럼명을 대시보드 내부 컨벤션으로 매핑
-    return df.rename(columns={
+    df = pd.read_csv(SURVIVAL_FILE).rename(columns={
         'event_flag':    'event',
         'duration_days': 'duration',
     })
+    if os.path.exists(CLUSTER_FILE):
+        clusters = pd.read_csv(CLUSTER_FILE)[['name', 'cluster']]
+        df = df.merge(clusters, on='name', how='left')
+        df['cluster'] = df['cluster'].astype('Int64')
+    return df
 
 
 @st.cache_data
