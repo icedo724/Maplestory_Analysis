@@ -1,10 +1,3 @@
-"""
-클러스터 프로파일 분석
-— segmentation/1_cluster.py 출력(clustered_users.csv)을 기반으로 군집 특성을 상세 출력한다.
-
-실행 순서: 1_cluster.py → 2_profile.py
-"""
-
 import os
 import sys
 

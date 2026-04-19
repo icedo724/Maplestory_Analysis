@@ -1,15 +1,3 @@
-"""
-Kaplan-Meier 생존 분석
-— survival/1_preprocess.py 출력(survival_data.csv)을 기반으로
-  KM 곡선 요약·로그랭크 검정·활동도 그룹 분석을 수행한다.
-
-사전 조건
----------
-  pip install lifelines
-
-실행 순서: survival/1_preprocess.py → survival/2_analyze.py
-"""
-
 import os
 import sys
 
@@ -49,10 +37,6 @@ def subsection(title):
 
 
 def km_summary_line(durations, events, label="전체"):
-    """
-    KM 추정으로 중앙 생존 일수와 이탈율을 한 줄로 출력한다.
-    lifelines 없으면 단순 통계만 출력.
-    """
     n       = len(durations)
     ev_rate = events.mean() * 100
 
@@ -61,9 +45,9 @@ def km_summary_line(durations, events, label="전체"):
         kmf.fit(durations, event_observed=events, label=label)
         median = kmf.median_survival_time_
         # 30·60·90일 시점 생존율
-        surv_30  = float(kmf.survival_function_at_times([30]).iloc[0])  if 30  <= durations.max() else np.nan
-        surv_60  = float(kmf.survival_function_at_times([60]).iloc[0])  if 60  <= durations.max() else np.nan
-        surv_90  = float(kmf.survival_function_at_times([90]).iloc[0])  if 90  <= durations.max() else np.nan
+        surv_30  = float(kmf.survival_function_at_times([30]).iloc[0]) if 30 <= durations.max() else np.nan
+        surv_60  = float(kmf.survival_function_at_times([60]).iloc[0]) if 60 <= durations.max() else np.nan
+        surv_90  = float(kmf.survival_function_at_times([90]).iloc[0]) if 90 <= durations.max() else np.nan
         print(f"  {label:<25} n={n:>5}  중앙생존={median:>6.1f}일  "
               f"이탈율={ev_rate:5.1f}%  "
               f"S(30)={surv_30:.3f}  S(60)={surv_60:.3f}  S(90)={surv_90:.3f}")
@@ -75,7 +59,6 @@ def km_summary_line(durations, events, label="전체"):
 
 
 def pairwise_logrank(df_sub, group_col, dur_col='duration_days', ev_col='event_flag'):
-    """그룹 쌍별 로그랭크 검정 결과를 테이블 형식으로 출력."""
     groups = sorted(df_sub[group_col].dropna().unique())
     if len(groups) < 2:
         print("  [주의] 그룹이 2개 미만 — 검정 불가")
@@ -118,7 +101,6 @@ if __name__ == "__main__":
           f"이탈율: {n_event / len(df) * 100:.1f}%")
     print(f"       duration 범위: {df['duration_days'].min():.0f}일 ~ {df['duration_days'].max():.0f}일")
 
-    # 클러스터 정보 병합 (있으면)
     has_cluster = os.path.exists(CLUSTER_FILE)
     if has_cluster:
         clusters = pd.read_csv(CLUSTER_FILE)[['name', 'cluster']]

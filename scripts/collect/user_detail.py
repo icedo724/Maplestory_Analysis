@@ -18,7 +18,7 @@ TRACKING_FILE   = os.path.join(RAW_DIR, "daily_tracking_lv.csv")
 SAMPLE_FILE     = os.path.join(RAW_DIR, "user_detail_sample.csv")
 OCID_CACHE_FILE = os.path.join(RAW_DIR, "ocid_cache.csv")
 OUTPUT_FILE     = os.path.join(RAW_DIR, "user_detail.csv")
-STAT_FILE       = os.path.join(RAW_DIR, "user_stat.csv")  # 보완수집 임시파일 (마이그레이션용)
+STAT_FILE       = os.path.join(RAW_DIR, "user_stat.csv")  # 마이그레이션용 임시파일
 
 DAILY_LIMIT_PER_KEY = 950
 REQUEST_INTERVAL    = 0.3
@@ -36,7 +36,7 @@ EXCLUDE_STATS = {
     '소환수 지속시간 증가',
 }
 
-# 스탯 외 기본 컬럼 목록 (스탯 수집 여부 판별에 사용)
+# 스탯 수집 여부 판별에 사용
 DETAIL_COLS = frozenset([
     'name', 'world', 'tier', 'world_group', 'latest_level',
     'ocid', 'date_create', 'character_class', 'access_flag', 'union_level',
@@ -245,7 +245,6 @@ def build_sample_list():
 # ─── 수집 상태 판별 ───────────────────────────────────────────────────────────
 
 def _has_stat(row: dict) -> bool:
-    """stat 컬럼(DETAIL_COLS 외) 중 하나라도 값이 있으면 True."""
     return any(
         col not in DETAIL_COLS and val is not None and not (isinstance(val, float) and np.isnan(val))
         for col, val in row.items()
@@ -255,22 +254,19 @@ def _has_stat(row: dict) -> bool:
 # ─── 메인 수집 루프 ───────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    # 1. 샘플 목록 로드
     if not os.path.exists(SAMPLE_FILE):
         sample_df = build_sample_list()
     else:
         sample_df = pd.read_csv(SAMPLE_FILE)
         print(f"[정보] 기존 샘플 목록 로드: {len(sample_df):,}명")
 
-    # 2. 기존 수집 데이터 로드
-    rows_dict = {}  # name → {col: val, ...}
+    rows_dict = {}
     if os.path.exists(OUTPUT_FILE):
         existing_df = pd.read_csv(OUTPUT_FILE)
         rows_dict = existing_df.where(pd.notna(existing_df), other=None).to_dict('records')
         rows_dict = {r['name']: r for r in rows_dict}
         print(f"[정보] 기수집 데이터 로드: {len(rows_dict):,}명")
 
-    # 3. user_stat.csv 마이그레이션 (보완수집 임시파일 → OUTPUT_FILE 통합)
     if os.path.exists(STAT_FILE):
         stat_df = pd.read_csv(STAT_FILE)
         print(f"[마이그레이션] user_stat.csv 병합 중 ({len(stat_df):,}건)...")
@@ -287,13 +283,11 @@ if __name__ == "__main__":
         os.remove(STAT_FILE)
         print(f"   → 통합 완료. user_stat.csv 삭제")
 
-    # 4. OCID 캐시 로드
     ocid_cache = {}
     if os.path.exists(OCID_CACHE_FILE):
         ocid_cache = pd.read_csv(OCID_CACHE_FILE).set_index('name')['ocid'].to_dict()
         print(f"[정보] OCID 캐시 로드: {len(ocid_cache):,}건")
 
-    # 5. 수집 대상 분류
     done_detail = {name for name, r in rows_dict.items() if r.get('ocid')}
     done_stat   = {name for name, r in rows_dict.items() if _has_stat(r)}
     done_all    = done_detail & done_stat
@@ -323,7 +317,6 @@ if __name__ == "__main__":
             need_detail  = name not in done_detail
             existing_row = rows_dict.get(name, {})
 
-            # 1. OCID 확보
             if need_detail:
                 if name in ocid_cache:
                     ocid = ocid_cache[name]
@@ -339,7 +332,6 @@ if __name__ == "__main__":
                 print(f"\n   [스킵] {name}: OCID 없음")
                 continue
 
-            # 2. character/basic + user/union (필요한 경우만)
             if need_detail:
                 basic       = fetch_basic(ocid, key_manager)
                 union_level = fetch_union(ocid, key_manager)
@@ -357,7 +349,6 @@ if __name__ == "__main__":
                 }
                 existing_row.update(new_row)
 
-            # 3. character/stat
             stat_dict = fetch_stat(ocid, key_manager)
             existing_row.update(stat_dict)
             rows_dict[name] = existing_row

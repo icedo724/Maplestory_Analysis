@@ -6,13 +6,12 @@ import sys
 import urllib3
 from datetime import datetime, timedelta
 
-# SSL 경고 무시
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ================= CONFIG =================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SAVE_DIR = os.path.join(BASE_DIR, "data", "raw")
-TEMP_DIR = os.path.join(SAVE_DIR, "temp")  # 임시 저장소
+TEMP_DIR = os.path.join(SAVE_DIR, "temp")
 OUTPUT_FILE = os.path.join(SAVE_DIR, "daily_tracking_lv.csv")
 LOG_FILE = os.path.join(SAVE_DIR, "completed_log.txt")
 KEY_PATH = os.path.join(BASE_DIR, "config", "api.txt")
@@ -161,7 +160,6 @@ if __name__ == "__main__":
     for target_date in target_dates:
         if stop_all: break
 
-        # 임시 파일 이어받기
         temp_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}.csv")
         page_file_path = os.path.join(TEMP_DIR, f"partial_{target_date}_page.txt")
         daily_data = []
@@ -259,7 +257,6 @@ if __name__ == "__main__":
                     daily_names.add(nm)
                     tracked_names.add(nm)
 
-            # 페이지 단위 임시 저장
             if daily_data:
                 pd.DataFrame(daily_data).to_csv(temp_file_path, index=False, encoding='utf-8-sig')
                 with open(page_file_path, 'w') as pf:
@@ -268,13 +265,10 @@ if __name__ == "__main__":
             page += 1
             time.sleep(REQUEST_INTERVAL)
 
-        # 날짜 완주 시 처리
         if date_success:
             if daily_data:
-                # 1. 메인 데이터와 병합
                 df_new = pd.DataFrame(daily_data)
 
-                # 동일 날짜 컬럼 덮어쓰기
                 cols_to_drop = [c for c in df_m.columns if target_date in c]
                 if cols_to_drop:
                     df_m.drop(columns=cols_to_drop, inplace=True)
@@ -282,7 +276,6 @@ if __name__ == "__main__":
                 df_m = pd.merge(df_m, df_new, on=['name', 'job', 'world'], how='outer')
                 df_m.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
 
-                # 임시 파일 삭제 및 완료 로그 기록
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
                 if os.path.exists(page_file_path):
@@ -291,7 +284,7 @@ if __name__ == "__main__":
                 mark_date_completed(target_date)
                 print(f"\n[성공] {target_date} 처리 완료 (총 {len(df_m)}명)")
             else:
-                # 데이터가 없는 날 (점검일 등?)
+                # 점검일 등 데이터 없는 날도 완료 처리
                 mark_date_completed(target_date)
                 print(f"\n[성공] {target_date} 데이터 없음 (완료 처리)")
         else:

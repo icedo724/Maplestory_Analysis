@@ -1,8 +1,7 @@
 import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# user_clustering/dashboard/config.py → BASE_DIR = maple/
-BASE_DIR    = os.path.dirname(os.path.dirname(current_dir))
+BASE_DIR    = os.path.dirname(os.path.dirname(current_dir))  # maple/
 
 SURVIVAL_FILE    = os.path.join(BASE_DIR, "data", "processed", "survival", "survival_data.csv")
 CLUSTER_FILE     = os.path.join(BASE_DIR, "data", "processed", "segmentation", "clustered_users.csv")

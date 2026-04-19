@@ -16,7 +16,6 @@ CLUSTER_COLORS = px.colors.qualitative.Set2
 # ── KM 계산 헬퍼 ─────────────────────────────────────────────────────────────
 
 def _km_curve(durations, events):
-    """최소한의 Kaplan-Meier 계산 (lifelines 없이 직접 구현)."""
     df = pd.DataFrame({'t': durations, 'e': events}).sort_values('t').reset_index(drop=True)
     times   = [0]
     survive = [1.0]
@@ -34,7 +33,6 @@ def _km_curve(durations, events):
             continue
         if t_val != prev_t:
             S = S * (1 - d / n_at_risk)
-            # Greenwood variance
             with np.errstate(divide='ignore', invalid='ignore'):
                 var = S ** 2 * ((df[df['t'] <= t_val]['e'].sum() / max(1, n_at_risk)) * (d / max(1, n_at_risk * (n_at_risk - d))) if (n_at_risk - d) > 0 else 0)
             se  = np.sqrt(max(var, 0))
@@ -91,10 +89,6 @@ def make_km_figure(df_surv, group_col, title, colors=None):
 # ── 클러스터 레이블 ───────────────────────────────────────────────────────────
 
 def label_cluster(df_cl):
-    """클러스터 중앙값 기준으로 (플레이시간)_(플레이수준) 레이블 부여.
-    플레이시간: character_age_days 중앙값 — 올드(>1500) / 미드(>600) / 뉴(>350) / 신규
-    플레이수준: active_day_ratio 중앙값  — 헤비(>0.5) / 라이트
-    """
     medians = df_cl.groupby('cluster')[['character_age_days', 'active_day_ratio']].median()
 
     def _label(age, r):

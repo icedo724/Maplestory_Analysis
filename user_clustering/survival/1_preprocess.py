@@ -7,7 +7,6 @@ import pandas as pd
 # ================= CONFIG =================
 BASE_DIR      = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# scripts/ 를 경로에 추가하여 utils 임포트
 sys.path.insert(0, os.path.join(BASE_DIR, "scripts"))
 from utils import get_segment, filter_completed_dates, compute_daily_exp
 
@@ -19,17 +18,13 @@ LOG_FILE        = os.path.join(BASE_DIR, "data", "raw", "completed_log.txt")
 OUTPUT_FILE     = os.path.join(OUT_DIR, "survival_data.csv")
 
 SHOWCASE_DATE = "2025-12-13"
-
-# 이탈 기준: 7일 연속 비활성
-# Lv.285+ 고레벨 유저는 일상적으로 매일 또는 격일 사냥하는 경향이 강하므로
-# 7일 연속 비접속은 사실상 휴면·이탈 신호로 해석한다.
+# Lv.285+ 고레벨 유저는 매일 또는 격일 사냥 경향이 강하므로 7일 비활성 = 이탈 신호
 CHURN_THRESHOLD = 7
 # ==========================================
 
 
 if __name__ == "__main__":
 
-    # ── 1. 데이터 로드 ─────────────────────────────────────────────────────────
     for path in [TRACKING_FILE, USER_DETAIL_CSV]:
         if not os.path.exists(path):
             print(f"[오류] 파일 없음: {path}")
@@ -39,13 +34,11 @@ if __name__ == "__main__":
     tracking    = pd.read_csv(TRACKING_FILE).drop_duplicates(subset='name')
     user_detail = pd.read_csv(USER_DETAIL_CSV)
 
-    # ── 2. Inner join ──────────────────────────────────────────────────────────
     detail_cols = ['name', 'world_group', 'tier', 'union_level', 'date_create', 'access_flag']
     df = tracking.merge(user_detail[detail_cols], on='name', how='inner')
     print(f"[정보] tracking: {len(tracking):,}명 / user_detail: {len(user_detail):,}명 "
           f"→ inner join: {len(df):,}명")
 
-    # ── 3. 날짜 컬럼 정렬 + 완료일 필터 ──────────────────────────────────────
     exp_cols = sorted(
         [c for c in df.columns if c.startswith('Exp_')],
         key=lambda x: pd.to_datetime(x.replace('Exp_', ''))
@@ -56,13 +49,12 @@ if __name__ == "__main__":
     )
     dates = [c.replace('Exp_', '') for c in exp_cols]
     dates = filter_completed_dates(dates, LOG_FILE)
-    lv_cols = [f'Lv_{d}' for d in dates]   # 동기화
+    lv_cols = [f'Lv_{d}' for d in dates]
 
     if len(dates) < 2:
         print("[오류] 비교할 일자 부족 (최소 2일 필요).")
         sys.exit()
 
-    # ── 4. Daily 경험치 계산 ──────────────────────────────────────────────────
     print("[진행] 일일 경험치 계산 중 (레벨업 보정 포함)...")
     daily_dict, daily_cols, _ = compute_daily_exp(df, dates)
     if not daily_cols:
@@ -71,7 +63,6 @@ if __name__ == "__main__":
         sys.exit()
     df = pd.concat([df, pd.DataFrame(daily_dict, index=df.index)], axis=1)
 
-    # ── 5. Segment 분류 ───────────────────────────────────────────────────────
     target_lv_col = f'Lv_{SHOWCASE_DATE}'
     if target_lv_col not in df.columns:
         target_lv_col = lv_cols[-1]
@@ -83,8 +74,7 @@ if __name__ == "__main__":
     if before > len(df):
         print(f"   [정보] 세그먼트 범위 외 {before - len(df)}명 제거")
 
-    # ── 6. 고스트 유저 제거 ───────────────────────────────────────────────────
-    # ※ showcase 와 달리 14일 연속 비활성 필터 미적용 — 이탈 유저 포함이 목적
+    # 이탈 유저 포함이 목적 — showcase 와 달리 14일 비활성 필터 미적용
     is_lv300   = (df[target_lv_col] == 300)
     daily_sum  = df[daily_cols].sum(axis=1, min_count=1)
     ghost_mask = (daily_sum == 0) & (~is_lv300)
@@ -94,8 +84,7 @@ if __name__ == "__main__":
     df = df[~ghost_mask & ~nan_mask].reset_index(drop=True)
     print(f"   [필터] 고스트 유저 {before - len(df)}명 제거 → 잔여 {len(df)}명")
 
-    # ── 7. 대칭 Pre/Post 평균 (쇼케이스 반응도 공변량) ──────────────────────
-    # showcase/2_aggregate.py 와 동일한 대칭 기간 계산 방식 사용
+    # showcase/2_aggregate.py 와 동일한 대칭 기간 방식
     showcase_dt = pd.to_datetime(SHOWCASE_DATE)
     activity_dates = [
         pd.to_datetime(c.replace('Daily_', '')) - pd.Timedelta(days=1)
@@ -113,7 +102,6 @@ if __name__ == "__main__":
     df['pre_avg']  = df[pre_cols].mean(axis=1)  if pre_cols  else np.nan
     df['post_avg'] = df[post_cols].mean(axis=1) if post_cols else np.nan
 
-    # ── 8. 생존 분석 Feature 계산 ─────────────────────────────────────────────
     print("[진행] 생존 분석 Feature 계산 중...")
 
     daily_mat       = df[daily_cols].to_numpy(dtype=float)
@@ -137,21 +125,19 @@ if __name__ == "__main__":
         -1
     )
 
-    # 마지막 활성일 이후 ~ 마지막 유효 관측일까지 비활성 일수
     trailing_inactive = np.where(
         has_any_active & has_any_valid,
         last_valid_idx - last_active_idx,
         np.nan,
     ).astype(float)
 
-    # 이탈 플래그: trailing_inactive >= CHURN_THRESHOLD
     event_flag = np.where(
         has_any_active,
         (trailing_inactive >= CHURN_THRESHOLD).astype(float),
         np.nan,
     )
 
-    # Lv.300 도달 유저는 경험치가 오르지 않는 구조적 특성 → 이탈로 판정하지 않고 관측중단 처리
+    # Lv.300 도달 유저: 경험치 비증가는 구조적 특성 → 이탈 아닌 관측중단 처리
     last_lv_col = lv_cols[-1]
     lv_at_end   = df[last_lv_col].values
     lv300_mask  = (lv_at_end == 300)
@@ -159,7 +145,7 @@ if __name__ == "__main__":
         print(f"   [정보] 관측 기간 중 Lv.300 도달 {int(lv300_mask.sum())}건 → 관측중단(event=0) 처리")
         event_flag = np.where(lv300_mask, 0, event_flag)
 
-    # duration: 이탈 → first_active ~ last_active / 관측중단 → first_active ~ last_valid
+    # 이탈 → first~last_active / 관측중단 → first~last_valid
     duration_days = np.where(
         has_any_active & has_any_valid,
         np.where(
@@ -169,8 +155,7 @@ if __name__ == "__main__":
         ),
         np.nan,
     ).astype(float)
-    # 최소 1일 보장 (당일 이탈 방지)
-    duration_days = np.maximum(duration_days, 1)
+    duration_days = np.maximum(duration_days, 1)  # 당일 이탈 방지
 
     active_day_count = active_mat_bool.sum(axis=1).astype(float)
     total_valid_days = valid_mat_bool.sum(axis=1).astype(float)
@@ -185,7 +170,6 @@ if __name__ == "__main__":
         avg_exp_on_active = np.nanmean(active_exp_only, axis=1)
     avg_exp_on_active = np.where(has_any_active, avg_exp_on_active, np.nan)
 
-    # 캐릭터 나이 (date_create → last_valid_date)
     df['date_create'] = pd.to_datetime(df['date_create'], errors='coerce')
     last_valid_dates  = pd.to_datetime([
         daily_dates_dt[int(i)].strftime('%Y-%m-%d') if i >= 0 else pd.NaT
@@ -193,7 +177,7 @@ if __name__ == "__main__":
     ])
     age_td = last_valid_dates - df['date_create'].values
     character_age_days = age_td.days.astype(float)
-    # date_create / last_valid 누락(NaT) → .days 는 iNaT(거대 음수) 반환 → 명시 NaN 처리
+    # NaT.days 는 iNaT(거대 음수) 반환 → 명시 NaN 처리
     nat_mask = df['date_create'].isna().to_numpy() | np.array(pd.isna(last_valid_dates))
     if nat_mask.any():
         print(f"   [경고] date_create/last_valid 누락 {int(nat_mask.sum())}건 → NaN 처리")
@@ -208,7 +192,6 @@ if __name__ == "__main__":
         for i in last_active_idx
     ]
 
-    # ── 9. 결과 조립 ──────────────────────────────────────────────────────────
     result = df[['name', 'segment', 'job', 'world', 'world_group', 'tier',
                  'union_level', 'access_flag']].copy()
 
@@ -226,13 +209,11 @@ if __name__ == "__main__":
     result['pre_avg']                = df['pre_avg'].values
     result['post_avg']               = df['post_avg'].values
 
-    # 활성 기록이 아예 없는 유저, 또는 duration 계산 불가 유저 제거
     before = len(result)
     result = result[result['event_flag'].notna() & result['duration_days'].notna()].reset_index(drop=True)
     if before > len(result):
         print(f"   [정보] 활성 기록 없는 유저 {before - len(result)}명 추가 제거")
 
-    # ── 10. 저장 ──────────────────────────────────────────────────────────────
     os.makedirs(OUT_DIR, exist_ok=True)
     result.to_csv(OUTPUT_FILE, index=False, encoding='utf-8-sig')
 
