@@ -26,6 +26,7 @@ def main():
 
     st.title("메이플스토리 쇼케이스 영향 분석")
     st.caption(f"쇼케이스: {SHOWCASE_DATE}  |  분석 대상: {total_n:,}명  |  수집 기간: {data_start} ~ {data_end}")
+    st.caption("이 대시보드는 위 기간에 수집한 **고정 스냅샷**을 분석한 결과입니다. 이후 데이터는 갱신하지 않습니다.")
     st.divider()
 
     tab1, tab2, tab3, tab4 = st.tabs([
