@@ -9,6 +9,10 @@ from loader import load_survival, load_cluster, load_user_stat
 
 st.set_page_config(page_title="메이플스토리 유저 분석", layout="wide")
 
+# 분석 대상 데이터는 아래 기간에 수집한 고정 스냅샷이다.
+# 수집을 재개하면 이 값도 함께 갱신해야 한다.
+DATA_PERIOD = "2025.11.08 ~ 2026.03.14 (126일)"
+
 SEGMENT_ORDER  = ['Lv.285~289', 'Lv.290~294', 'Lv.295~299']
 CLUSTER_COLORS = px.colors.qualitative.Set2
 
@@ -110,6 +114,8 @@ def label_cluster(df_cl):
 def main():
     st.title("메이플스토리 유저 분석")
     st.caption("유저 이탈 패턴 분석 · 클러스터별 특성 분석 · 스펙 분포 비교")
+    st.caption(f"수집 기간: {DATA_PERIOD}")
+    st.caption("이 대시보드는 위 기간에 수집한 **고정 스냅샷**을 분석한 결과입니다. 이후 데이터는 갱신하지 않습니다.")
     st.divider()
 
     tab1, tab2, tab3 = st.tabs([
